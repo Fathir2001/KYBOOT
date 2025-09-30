@@ -3,10 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Kyboot Shop � Shoes & Footwear</title>
+  <meta name="description" content="Kyboot Shop – Premium ergonomic shoes, sneakers, sandals & footwear focused on comfort, style and performance." />
+  <title>Kyboot Shop – Shoes & Footwear</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Animated Background Layer -->
+  <div id="bgFX" class="bg-fx" aria-hidden="true"></div>
   <header class="site-header">
     <div class="container header-inner">
       <a class="brand" href="#">Kyboot<span class="dot">.</span></a>
@@ -19,19 +22,20 @@
         </select>
         <select id="sortSelect" aria-label="Sort products">
           <option value="default">Sort: Featured</option>
-          <option value="price-asc">Price: Low ? High</option>
-          <option value="price-asc">price: Low ? Meidum</option>
-          <option value="price-desc">Price: High ? Low</option>
+          <option value="price-asc">Price: Low → High</option>
+          <option value="price-desc">Price: High → Low</option>
         </select>
         <button id="cartBtn" class="cart-btn" aria-haspopup="dialog" aria-controls="cartPanel">
           Cart <span id="cartCount" class="cart-count">0</span>
         </button>
+        <button id="modeToggle" class="mode-toggle" aria-pressed="false" title="Toggle Glass UI">Glass</button>
       </nav>
     </div>
   </header>
 
   <main class="container main">
     <section class="hero">
+      <div class="badge glow" aria-hidden="true">New Season 2025</div>
       <h1>Kyboot Shop</h1>
       <p>Comfortable. Stylish. Built for life on the move.</p>
       <br>
@@ -47,34 +51,6 @@
     </section>
   </main>
 
-  <!-- Product Quick View Modal -->
-  <div id="productModal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="modalTitle">
-    <div class="modal-content">
-      <button class="close" id="closeModal" aria-label="Close">�</button>
-      <div class="modal-body">
-        <img id="modalImage" src="" alt="" />
-        <div class="modal-info">
-          <h2 id="modalTitle"></h2>
-          <p id="modalDesc"></p>
-          <p class="price" id="modalPrice"></p>
-          <label>
-            Size:
-            <select id="modalSize">
-              <option>40</option><option>41</option><option>42</option><option>43</option><option>44</option>
-            </select>
-          </label>
-          <label>
-            Quantity:
-            <input id="modalQty" type="number" min="1" value="1" />
-          </label>
-          <div class="modal-actions">
-            <button id="addToCartModal" class="btn primary">Add to cart</button>
-            <button id="buyNow" class="btn">Buy now</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Cart Panel -->
   <aside id="cartPanel" class="cart-panel" aria-hidden="true" role="dialog" aria-label="Cart">
@@ -97,7 +73,7 @@
 
   <footer class="site-footer">
     <div class="container">
-      <div>� <span id="year"></span> Kyboot Shop � Made By Mohamed Safran</div>
+      <div>© <span id="year"></span> Kyboot Shop – Made By Mohamed Safran</div>
       <div class="footer-links">
         <a href="#" id="terms">Terms</a>
         <a href="#" id="contact">Contact</a>

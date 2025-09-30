@@ -13,7 +13,7 @@ const PRODUCTS = [
     price: 349,
     category: 'Sneakers',
     description: 'Lightweight everyday sneaker with ergonomic sole and breathable mesh.',
-    image: 'https://us.kybun.swiss/cdn/shop/files/66d9800507301KY512A_a_46f42217-8c04-4d81-b455-7949bbf7f4bc.png?v=1754918322&width=533'
+    image: 'https://images.ctfassets.net/hnk2vsx53n6l/4gUWSLm8iWX5eOoDpKVwxo/b6e653f79f6836c7ad8027fc40723e08/bbfd217f59a6fd93f4510e4502ee11530eeb2d7b.png?w=1500&h=1500&fm=jpg&fl=progressive&f=center&fit=fill&q=80'
   },
   {
     id: 'kb-002',
@@ -129,7 +129,17 @@ const cartCount = document.getElementById('cartCount');
 const cartPanel = document.getElementById('cartPanel');
 const cartItemsEl = document.getElementById('cartItems');
 const cartSubtotalEl = document.getElementById('cartSubtotal');
-const productModal = document.getElementById('productModal');
+// Removed product modal feature
+const productModal = null;
+let lastModalTrigger = null;
+
+// Utility helpers
+const $ = (id) => document.getElementById(id);
+function safeEl(id, warn = false) {
+  const el = $(id);
+  if (!el && warn) console.warn('[KYBOOT] Missing expected element #' + id);
+  return el;
+}
 
 /* ---------- Init ----------
 --------------------------*/
@@ -140,6 +150,12 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCart();
   initScrollAnimations();
   document.getElementById('year').textContent = new Date().getFullYear();
+  initBackgroundOrbs();
+  initModeToggle();
+  // apply persisted mode
+  if(localStorage.getItem('kyboot_ui_mode') === 'glass'){ enableGlassMode(true); }
+  initBackgroundStreaks();
+  initCursorFX();
   
   // Add page load animation
   document.body.style.opacity = '0';
@@ -148,6 +164,198 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.style.opacity = '1';
   }, 100);
 });
+
+/* ---------- Ambient Background Orbs ---------- */
+function initBackgroundOrbs(){
+  const container = document.getElementById('bgFX');
+  if(!container) return;
+  // Avoid duplicates (hot reload, etc.)
+  if(container.dataset.enhanced) return; 
+  container.dataset.enhanced = 'true';
+
+  const ORB_COUNT = 9;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  for(let i=0;i<ORB_COUNT;i++){
+    const orb = document.createElement('div');
+    orb.className = 'orb';
+    const size = Math.round( (Math.random()*0.6 + 0.4) * 260 );
+    const xStart = Math.round(Math.random() * (vw - size));
+    const yStart = Math.round(Math.random() * (vh - size));
+    const xDrift = Math.round((Math.random()*2 -1) * 120);
+    const yDrift = Math.round((Math.random()*2 -1) * 140);
+    const dur = (Math.random()*14 + 18).toFixed(1) + 's';
+    const delay = (Math.random()*-20).toFixed(2) + 's';
+    const opacity = (Math.random()*0.35 + 0.25).toFixed(2);
+    orb.style.setProperty('--size', size+'px');
+    orb.style.setProperty('--xStart', xStart+'px');
+    orb.style.setProperty('--yStart', yStart+'px');
+    orb.style.setProperty('--xDrift', xDrift+'px');
+    orb.style.setProperty('--yDrift', yDrift+'px');
+    orb.style.setProperty('--dur', dur);
+    orb.style.setProperty('--delay', delay);
+    orb.style.setProperty('--o', opacity);
+    container.appendChild(orb);
+  }
+
+  // Recompute on resize (debounced)
+  let resizeTO;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTO);
+    resizeTO = setTimeout(() => {
+      // Remove existing orbs & regenerate (avoid layout thrash by fragment)
+      [...container.querySelectorAll('.orb')].forEach(o => o.remove());
+      container.dataset.enhanced = '';
+      initBackgroundOrbs();
+    }, 400);
+  });
+}
+
+/* ---------- Background Sprinting Streak Effect ---------- */
+function initBackgroundStreaks(){
+  // Now spawns small "butterflies" that flap & drift when cursor sprints
+  const layer = document.getElementById('bgFX');
+  if(!layer) return;
+  let last = { x: null, y: null, t: 0 };
+  const maxButterflies = 34;
+  const minDist = 14; // minimum movement to consider
+  const minInterval = 26; // ms throttle
+  const speedThreshold = 320; // px/sec required to spawn a butterfly
+
+  const palettes = [
+    [210,260], // blue / violet
+    [190,330], // aqua / pink
+    [270,320], // purple / magenta
+    [35,210],  // amber / teal
+    [150,200]  // green / cyan
+  ];
+
+  function spawnButterfly(x, y, dx, dy, speed){
+    if(speed < speedThreshold) return; // only on sprint
+    // Avoid spawning over interactive card to reduce clutter
+    const el = document.elementFromPoint(x, y);
+    if(el && el.closest('.card')) return;
+    const b = document.createElement('div');
+    b.className = 'butterfly';
+    const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+    const spNorm = Math.min(Math.max(speed, speedThreshold), 2000);
+    const scale = (0.65 + (spNorm - speedThreshold)/2000).toFixed(2);
+    const life = (650 + Math.random()*420)|0; // ms
+    const flap = (340 + Math.random()*160)|0; // ms
+    const driftX = (Math.random()*60 - 30).toFixed(1) + 'px';
+    const driftY = (-(Math.random()*60 + 40)).toFixed(1) + 'px';
+    const [h1,h2] = palettes[Math.floor(Math.random()*palettes.length)];
+    b.style.left = x + 'px';
+    b.style.top = y + 'px';
+    b.style.setProperty('--r', ang + 'deg');
+    b.style.setProperty('--s', scale);
+    b.style.setProperty('--dx', driftX);
+    b.style.setProperty('--dy', driftY);
+    b.style.setProperty('--life', life + 'ms');
+    b.style.setProperty('--flap', flap + 'ms');
+    b.style.setProperty('--h1', h1);
+    b.style.setProperty('--h2', h2);
+    layer.appendChild(b);
+    setTimeout(() => b.remove(), life + 60);
+    const all = layer.querySelectorAll('.butterfly');
+    if(all.length > maxButterflies){
+      for(let i=0;i< all.length - maxButterflies; i++) all[i].remove();
+    }
+  }
+
+  window.addEventListener('pointermove', (e) => {
+    const now = performance.now();
+    if(last.x == null){ last = { x: e.clientX, y: e.clientY, t: now }; return; }
+    const dx = e.clientX - last.x;
+    const dy = e.clientY - last.y;
+    const dist = Math.hypot(dx, dy);
+    const dt = now - last.t || 1;
+    if(dist < minDist || dt < minInterval){ return; }
+    const speed = dist / dt * 1000; // px per second
+    spawnButterfly(e.clientX, e.clientY, dx, dy, speed);
+    last = { x: e.clientX, y: e.clientY, t: now };
+  }, { passive: true });
+}
+
+/* ---------- Enhanced Cursor FX (Follower + Sparks) ---------- */
+function initCursorFX(){
+  const layer = document.getElementById('bgFX');
+  if(!layer) return;
+  // Core follower element
+  let core = layer.querySelector('.cursor-core');
+  if(!core){
+    core = document.createElement('div');
+    core.className = 'cursor-core hidden';
+    layer.appendChild(core);
+  }
+  let lastX = window.innerWidth/2, lastY = window.innerHeight/2;
+  let targetX = lastX, targetY = lastY;
+  let rafId;
+  const ease = 0.15; // smoothing factor
+  const sparksMax = 60;
+  let lastSparkTime = 0;
+
+  function loop(){
+    const dx = targetX - lastX;
+    const dy = targetY - lastY;
+    lastX += dx * ease;
+    lastY += dy * ease;
+    core.style.transform = `translate(${lastX}px, ${lastY}px) translate(-50%, -50%)`;
+    rafId = requestAnimationFrame(loop);
+  }
+  loop();
+
+  function spawnSpark(speed){
+    const now = performance.now();
+    // frequency scales with speed
+    if(now - lastSparkTime < Math.max(18, 120 - speed*0.08)) return;
+    lastSparkTime = now;
+    const spark = document.createElement('div');
+    spark.className = 'spark';
+    const angle = Math.random() * Math.PI * 2;
+    const spread = (Math.random()*8 + 4);
+    const vx = Math.cos(angle) * spread;
+    const vy = Math.sin(angle) * spread;
+    spark.style.left = targetX + 'px';
+    spark.style.top = targetY + 'px';
+    spark.style.setProperty('--x', vx.toFixed(2)+'px');
+    spark.style.setProperty('--y', vy.toFixed(2)+'px');
+    spark.style.setProperty('--dur', (500 + Math.random()*450)+'ms');
+    layer.appendChild(spark);
+    setTimeout(() => spark.remove(), 900);
+    const all = layer.querySelectorAll('.spark');
+    if(all.length > sparksMax){
+      for(let i=0;i< all.length - sparksMax; i++) all[i].remove();
+    }
+  }
+
+  let lastMove = { x: null, y: null, t: 0 };
+  window.addEventListener('pointermove', (e) => {
+    targetX = e.clientX; targetY = e.clientY;
+    core.classList.remove('hidden');
+    const now = performance.now();
+    if(lastMove.x != null){
+      const dx = e.clientX - lastMove.x;
+      const dy = e.clientY - lastMove.y;
+      const dist = Math.hypot(dx, dy);
+      const dt = now - lastMove.t || 1;
+      const speed = dist / dt * 1000; // px/s
+      spawnSpark(speed);
+      // subtle scale with speed
+      const scale = Math.min(1.25, 0.85 + speed / 2600);
+      core.style.scale = scale.toFixed(3);
+      core.style.opacity = Math.min(1, 0.55 + speed/2500).toFixed(2);
+    }
+    lastMove = { x: e.clientX, y: e.clientY, t: now };
+  }, { passive:true });
+
+  window.addEventListener('pointerleave', () => {
+    core.classList.add('hidden');
+  });
+
+  // Prevent memory leaks if page transitions later
+  window.addEventListener('beforeunload', () => cancelAnimationFrame(rafId));
+}
 
 /* ---------- Storage ----------
 ----------------------------*/
@@ -166,47 +374,45 @@ function loadCart() {
 /* ---------- UI: filters & controls ----------
 -------------------------------------------*/
 function attachControls() {
-  document.getElementById('searchInput').addEventListener('input', (e) => {
+  safeEl('searchInput')?.addEventListener('input', (e) => {
     state.filters.query = e.target.value.trim().toLowerCase();
     renderProducts();
   });
-
-  document.getElementById('categoryFilter').addEventListener('change', (e) => {
+  safeEl('categoryFilter')?.addEventListener('change', (e) => {
     state.filters.category = e.target.value;
     renderProducts();
   });
-
-  document.getElementById('sortSelect').addEventListener('change', (e) => {
+  safeEl('sortSelect')?.addEventListener('change', (e) => {
     state.filters.sort = e.target.value;
     renderProducts();
   });
-
-  document.getElementById('viewCatalogBtn').addEventListener('click', () => {
+  safeEl('viewCatalogBtn')?.addEventListener('click', () => {
     window.scrollTo({top: document.getElementById('productsGrid').offsetTop - 20, behavior:'smooth'});
   });
-
-  document.getElementById('cartBtn').addEventListener('click', () => {
+  safeEl('cartBtn')?.addEventListener('click', () => {
     toggleCartPanel(true);
   });
-
-  document.getElementById('closeCart').addEventListener('click', () => toggleCartPanel(false));
+  safeEl('closeCart')?.addEventListener('click', () => toggleCartPanel(false));
+  // Prevent clicks inside cart panel from bubbling to document close handler
+  cartPanel?.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
   
   // Close cart when clicking outside of it
   document.addEventListener('click', (e) => {
-    const cartPanel = document.getElementById('cartPanel');
-    const cartBtn = document.getElementById('cartBtn');
-    
-    // Check if cart is open and click is outside cart and cart button
-    if (cartPanel.getAttribute('aria-hidden') === 'false' && 
-        !cartPanel.contains(e.target) && 
-        !cartBtn.contains(e.target)) {
+    const panelEl = document.getElementById('cartPanel');
+    const btnEl = document.getElementById('cartBtn');
+    if (!panelEl || !btnEl) return;
+    if (panelEl.getAttribute('aria-hidden') === 'false') {
+      // Use composedPath to reliably detect internal clicks even if DOM changed during render
+      const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      if (path.includes(panelEl) || path.includes(btnEl)) return; // internal click
+      if (panelEl.contains(e.target) || btnEl.contains(e.target)) return; // fallback
       toggleCartPanel(false);
     }
   });
   
-  document.getElementById('closeModal').addEventListener('click', () => closeProductModal());
-  document.getElementById('addToCartModal').addEventListener('click', addFromModal);
-  document.getElementById('buyNow').addEventListener('click', buyNowFromModal);
+  // Modal removed: no related listeners
 
   document.getElementById('checkoutBtn').addEventListener('click', () => {
     if (state.cart.length === 0) {
@@ -266,19 +472,20 @@ function renderProducts(){
     productsGrid.classList.remove('loading');
     list.forEach((p, index) => {
       const card = document.createElement('article');
-      card.className = 'card';
+      card.className = 'card tilt';
       card.style.animationDelay = `${index * 0.1}s`;
       card.innerHTML = `
-        <img loading="lazy" src="${p.image}" alt="${escapeHtml(p.title)}" />
-        <h3>${escapeHtml(p.title)}</h3>
-        <div class="meta">
-          <div>${escapeHtml(p.category)}</div>
-          <div class="price">${p.price.toFixed(2)} QAR</div>
-        </div>
-        <p style="color:var(--muted);font-size:13px;margin:8px 0">${escapeHtml(p.description)}</p>
-        <div style="display:flex;gap:8px">
-          <button class="btn" data-action="view" data-id="${p.id}">Quick view</button>
-          <button class="btn primary" data-action="add" data-id="${p.id}">Add to cart</button>
+        <div class="tilt-inner">
+          <img loading="lazy" src="${p.image}" alt="${escapeHtml(p.title)}" />
+          <h3>${escapeHtml(p.title)}</h3>
+          <div class="meta">
+            <div>${escapeHtml(p.category)}</div>
+            <div class="price">${p.price.toFixed(2)} QAR</div>
+          </div>
+          <p style="color:var(--muted);font-size:13px;margin:8px 0">${escapeHtml(p.description)}</p>
+          <div style="display:flex;gap:8px">
+            <button class="btn primary" data-action="add" data-id="${p.id}">Add to cart</button>
+          </div>
         </div>
       `;
       productsGrid.appendChild(card);
@@ -298,53 +505,29 @@ function renderProducts(){
           e.currentTarget.style.transform = '';
         }, 150);
         
-        if (action === 'view') openProductModal(id);
         if (action === 'add') {
           addToCart(id, 1);
           renderCart();
           // Enhanced cart button animation
           const cartEl = document.getElementById('cartBtn');
-          cartEl.style.animation = 'none';
-          cartEl.offsetHeight; // Trigger reflow
-          cartEl.style.animation = 'pulse 0.6s ease-in-out';
+          if (cartEl) {
+            cartEl.style.animation = 'none';
+            cartEl.offsetHeight; // Trigger reflow
+            cartEl.style.animation = 'pulse 0.6s ease-in-out';
+          }
           
           // Show success feedback
           showNotification('Added to cart!', 'success');
         }
       });
     });
+
+    // initialize tilt on newly added cards
+    initTiltEffects(productsGrid.querySelectorAll('.card.tilt'));
   }, 200);
 }
 
-/* ---------- Product modal ----------
----------------------------------*/
-function openProductModal(productId){
-  const p = PRODUCTS.find(x => x.id === productId);
-  if (!p) return;
-  state.activeProduct = p;
-  productModal.setAttribute('aria-hidden','false');
-  document.getElementById('modalImage').src = p.image;
-  document.getElementById('modalTitle').textContent = p.title;
-  document.getElementById('modalDesc').textContent = p.description;
-  document.getElementById('modalPrice').textContent = `${p.price.toFixed(2)} QAR`;
-  document.getElementById('modalQty').value = 1;
-  document.getElementById('modalSize').value = '42';
-  productModal.focus();
-}
-function closeProductModal(){
-  productModal.setAttribute('aria-hidden','true');
-  state.activeProduct = null;
-}
-function addFromModal(){
-  const qty = Math.max(1, parseInt(document.getElementById('modalQty').value || '1', 10));
-  addToCart(state.activeProduct.id, qty);
-  renderCart();
-  closeProductModal();
-}
-function buyNowFromModal(){
-  addFromModal();
-  toggleCartPanel(true);
-}
+// Modal feature removed: stripped related functions
 
 /* ---------- Cart logic ----------
 --------------------------------*/
@@ -404,10 +587,10 @@ function renderCart(){
           <div style="font-weight:700">${escapeHtml(p.title)}</div>
           <div style="color:var(--muted);font-size:13px">${p.price.toFixed(2)} QAR</div>
           <div class="qty" style="margin-top:6px">
-            <button class="btn" data-action="dec" data-id="${p.id}">-</button>
-            <input class="cart-qty" data-id="${p.id}" type="number" min="1" value="${it.qty}" style="width:56px;padding:6px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)" />
-            <button class="btn" data-action="inc" data-id="${p.id}">+</button>
-            <button class="btn" style="margin-left:8px" data-action="remove" data-id="${p.id}">Remove</button>
+        <button class="qty-btn" data-action="dec" data-id="${p.id}" aria-label="Decrease quantity" style="font-size:14px;padding:2px 6px;">−</button>
+        <input class="cart-qty" data-id="${p.id}" type="number" min="1" value="${it.qty}" aria-label="Quantity for ${escapeHtml(p.title)}" />
+        <button class="qty-btn" data-action="inc" data-id="${p.id}" aria-label="Increase quantity" style="font-size:14px;padding:2px 6px;">+</button>
+        <button class="btn small" style="margin-left:4px;font-size:12px;padding:2px 8px;" data-action="remove" data-id="${p.id}">Remove</button>
           </div>
         </div>
       `;
@@ -509,4 +692,63 @@ function initScrollAnimations() {
   document.querySelectorAll('.card, .hero, .controls').forEach(el => {
     observer.observe(el);
   });
+}
+
+/* ---------- Parallax Tilt Effect ---------- */
+function initTiltEffects(nodes){
+  nodes.forEach(card => {
+    if(card.dataset.tilted) return; card.dataset.tilted = 'true';
+    const maxTilt = 12; // degrees
+    const perspective = 900;
+    let ticking = false;
+
+    function setTransform(x, y){
+      const rect = card.getBoundingClientRect();
+      const cx = rect.left + rect.width/2;
+      const cy = rect.top + rect.height/2;
+      const dx = x - cx;
+      const dy = y - cy;
+      const rx = (dy / (rect.height/2)) * -maxTilt;
+      const ry = (dx / (rect.width/2)) * maxTilt;
+      card.dataset.tilting = 'true';
+      card.style.transform = `perspective(${perspective}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateY(-4px)`;
+    }
+
+    function reset(){
+      card.dataset.tilting = 'false';
+      card.style.transform = '';
+    }
+
+    card.addEventListener('pointermove', (e) => {
+      if(!ticking){
+        window.requestAnimationFrame(() => { setTransform(e.clientX, e.clientY); ticking=false; });
+        ticking = true;
+      }
+    });
+    card.addEventListener('pointerleave', reset);
+    card.addEventListener('blur', reset);
+  });
+}
+
+/* ---------- Mode Toggle (Normal / Glass) ---------- */
+function initModeToggle(){
+  const btn = document.getElementById('modeToggle');
+  if(!btn) return;
+  btn.addEventListener('click', () => {
+    const enable = !document.body.classList.contains('glass-mode');
+    enableGlassMode(enable);
+  });
+}
+
+function enableGlassMode(enable){
+  const btn = document.getElementById('modeToggle');
+  if(enable){
+    document.body.classList.add('glass-mode');
+    btn && (btn.setAttribute('aria-pressed','true'), btn.textContent='Normal');
+    localStorage.setItem('kyboot_ui_mode','glass');
+  } else {
+    document.body.classList.remove('glass-mode');
+    btn && (btn.setAttribute('aria-pressed','false'), btn.textContent='Glass');
+    localStorage.setItem('kyboot_ui_mode','normal');
+  }
 }
