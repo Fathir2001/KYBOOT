@@ -4,22 +4,7 @@
 
 /* ---------- Sample product data ----------
    Edit this array to add/remove products.
-   Each product: id,title,price,cat  document.getElementById('checkoutBtn').addEventListener('click', () => {
-    if (state.cart.length === 0) {
-      showNotification('Your cart is empty.', 'error');
-      return;
-    }
-    // Mock checkout – in a real app you'd connect to payment & backend
-    const total = calcSubtotal();
-    if (confirm(`Proceed to checkout? Subtotal: ${total.toFixed(2)} QAR`)) {
-      // Clear cart after mock checkout
-      state.cart = [];
-      saveCart();
-      renderCart();
-      toggleCartPanel(false);
-      showNotification('Thank you! Your order has been placed (mock).', 'success');
-    }
-  });n,image
+   Each product: id,title,price,category,description,image
 -----------------------------------------*/
 const PRODUCTS = [
   {
@@ -205,6 +190,20 @@ function attachControls() {
   });
 
   document.getElementById('closeCart').addEventListener('click', () => toggleCartPanel(false));
+  
+  // Close cart when clicking outside of it
+  document.addEventListener('click', (e) => {
+    const cartPanel = document.getElementById('cartPanel');
+    const cartBtn = document.getElementById('cartBtn');
+    
+    // Check if cart is open and click is outside cart and cart button
+    if (cartPanel.getAttribute('aria-hidden') === 'false' && 
+        !cartPanel.contains(e.target) && 
+        !cartBtn.contains(e.target)) {
+      toggleCartPanel(false);
+    }
+  });
+  
   document.getElementById('closeModal').addEventListener('click', () => closeProductModal());
   document.getElementById('addToCartModal').addEventListener('click', addFromModal);
   document.getElementById('buyNow').addEventListener('click', buyNowFromModal);

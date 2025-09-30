@@ -421,6 +421,28 @@
     color: white;
     border-radius: 12px 12px 0 0;
   }
+  .cart-header .close {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 16px;
+    font-weight: bold;
+  }
+  .cart-header .close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+  }
+  .cart-header .close:active {
+    transform: scale(0.95);
+  }
   .cart-items{
     max-height:320px;
     overflow:auto;
