@@ -738,17 +738,31 @@ function initModeToggle(){
     const enable = !document.body.classList.contains('glass-mode');
     enableGlassMode(enable);
   });
+  // Keyboard accessibility for role="switch"
+  btn.addEventListener('keydown', (e) => {
+    if(e.key === ' ' || e.key === 'Enter') { e.preventDefault(); btn.click(); }
+  });
 }
 
 function enableGlassMode(enable){
   const btn = document.getElementById('modeToggle');
   if(enable){
     document.body.classList.add('glass-mode');
-    btn && (btn.setAttribute('aria-pressed','true'), btn.textContent='Normal');
+    if(btn){
+      btn.setAttribute('aria-pressed','true');
+      btn.setAttribute('aria-checked','true');
+      btn.setAttribute('aria-label','Disable Glass Mode');
+      btn.classList.add('on');
+    }
     localStorage.setItem('kyboot_ui_mode','glass');
   } else {
     document.body.classList.remove('glass-mode');
-    btn && (btn.setAttribute('aria-pressed','false'), btn.textContent='Glass');
+    if(btn){
+      btn.setAttribute('aria-pressed','false');
+      btn.setAttribute('aria-checked','false');
+      btn.setAttribute('aria-label','Enable Glass Mode');
+      btn.classList.remove('on');
+    }
     localStorage.setItem('kyboot_ui_mode','normal');
   }
 }
