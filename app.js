@@ -415,28 +415,27 @@ function attachControls() {
   // Modal removed: no related listeners
 
   document.getElementById('checkoutBtn').addEventListener('click', () => {
-    if (state.cart.length === 0) {
-      alert('Your cart is empty.');
-      return;
-    }
-    // Mock checkout � in a real app you'd connect to payment & backend
+    if (state.cart.length === 0) { showToast('Your cart is empty.', 'error'); return; }
     const total = calcSubtotal();
-    if (confirm(`Proceed to checkout? Subtotal: ${total.toFixed(2)} QAR`)) {
-      // Clear cart after mock checkout
-      state.cart = [];
-      saveCart();
-      renderCart();
-      toggleCartPanel(false);
-      alert('Thank you! Your order has been placed (mock).');
-    }
+    showDialog({
+      title: 'Proceed to Checkout',
+      message: `Subtotal: <strong>${total.toFixed(2)} QAR</strong><br><small class="dialog-subnote">You will review shipping & payment next.</small>`,
+      confirmText: 'Continue',
+      cancelText: 'Cancel',
+      onConfirm: () => { window.location.href = 'checkout.html'; }
+    });
   });
 
   document.getElementById('clearCart').addEventListener('click', () => {
-    if (confirm('Clear cart?')) {
-      state.cart = [];
-      saveCart();
-      renderCart();
-    }
+    if(state.cart.length === 0){ showToast('Cart already empty','info'); return; }
+    showDialog({
+      title: 'Clear Cart',
+      message: 'Remove all items from your cart?',
+      confirmText: 'Clear',
+      confirmType: 'destructive',
+      cancelText: 'Cancel',
+      onConfirm: () => { state.cart = []; saveCart(); renderCart(); showToast('Cart cleared','success'); }
+    });
   });
 }
 
@@ -508,16 +507,14 @@ function renderProducts(){
         if (action === 'add') {
           addToCart(id, 1);
           renderCart();
-          // Enhanced cart button animation
           const cartEl = document.getElementById('cartBtn');
           if (cartEl) {
             cartEl.style.animation = 'none';
-            cartEl.offsetHeight; // Trigger reflow
+            cartEl.offsetHeight;
             cartEl.style.animation = 'pulse 0.6s ease-in-out';
           }
-          
-          // Show success feedback
-          showNotification('Added to cart!', 'success');
+          // Inline feedback under product card instead of global top-right notification
+          showInlineProductFeedback(e.currentTarget, id, 'Added');
         }
       });
     });
@@ -672,6 +669,93 @@ function showNotification(message, type = 'info', duration = 3000) {
   }, duration);
 }
 
+/* ---------- Site-wide Dialog & Toast (replaces alert/confirm) ---------- */
+function ensureDialogRoots(){
+  if(!document.getElementById('uiDialogRoot')){
+    const dlgRoot = document.createElement('div'); dlgRoot.id='uiDialogRoot'; dlgRoot.className='ui-dialog-root'; document.body.appendChild(dlgRoot);
+    const toast = document.createElement('div'); toast.id='toastStack'; toast.className='toast-stack'; document.body.appendChild(toast);
+  }
+}
+
+function showDialog({ title='Notice', message='', confirmText='OK', cancelText=null, confirmType='', onConfirm=null, onCancel=null }={}) {
+  ensureDialogRoots();
+  const root = document.getElementById('uiDialogRoot');
+  root.innerHTML = '';
+  root.classList.add('visible');
+  const overlay = document.createElement('div'); overlay.className='ui-dialog-overlay';
+  const dlg = document.createElement('div'); dlg.className='ui-dialog'; dlg.setAttribute('role','dialog'); dlg.setAttribute('aria-modal','true'); dlg.innerHTML = `
+    <button class="close-x" aria-label="Close">×</button>
+    <h3>${title}</h3>
+    <p>${message}</p>
+    <div class="actions"></div>`;
+  const actions = dlg.querySelector('.actions');
+  if(cancelText){
+    const cancelBtn = document.createElement('button'); cancelBtn.type='button'; cancelBtn.className='btn'; cancelBtn.textContent = cancelText; cancelBtn.onclick = closeCancel; actions.appendChild(cancelBtn);
+  }
+  const confirmBtn = document.createElement('button'); confirmBtn.type='button'; confirmBtn.className='btn primary'; if(confirmType==='destructive') confirmBtn.classList.add('destructive'); confirmBtn.textContent = confirmText; confirmBtn.onclick = () => { close(); onConfirm && onConfirm(); };
+  actions.appendChild(confirmBtn);
+  dlg.querySelector('.close-x').onclick = closeCancel;
+  function close(){ root.classList.remove('visible'); root.innerHTML=''; }
+  function closeCancel(){ close(); onCancel && onCancel(); }
+  document.addEventListener('keydown', escHandler);
+  function escHandler(e){ if(e.key==='Escape'){ closeCancel(); document.removeEventListener('keydown', escHandler); } }
+  root.appendChild(overlay); root.appendChild(dlg);
+  setTimeout(()=> confirmBtn.focus(), 40);
+  return { close };
+}
+
+function showToast(message, type='info', duration=4000){
+  ensureDialogRoots();
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div'); el.className = `toast ${type}`; el.innerHTML = `<span>${message}</span>`;
+  const dismiss = document.createElement('button'); dismiss.type='button'; dismiss.textContent='×'; dismiss.setAttribute('aria-label','Dismiss'); dismiss.onclick = () => remove(); el.appendChild(dismiss);
+  stack.appendChild(el);
+  function remove(){ if(!el.parentNode) return; el.style.opacity='0'; el.style.transform='translateY(-6px)'; setTimeout(()=> el.remove(), 260); }
+  setTimeout(remove, duration);
+}
+
+// Inline per-product feedback (beside button) with Undo capability
+function showInlineProductFeedback(triggerBtn, productId, message='Added', type='success') {
+  if(!triggerBtn) return;
+  const container = triggerBtn.parentElement; // flex wrapper containing the button
+  if(!container) return;
+  let slot = container.querySelector('.inline-feedback');
+  if(!slot){
+    slot = document.createElement('div');
+    slot.className = 'inline-feedback';
+    container.appendChild(slot);
+  }
+  slot.innerHTML = `<span class="msg">${escapeHtml(message)} to cart</span><button type="button" class="undo" aria-label="Undo add">Undo</button>`;
+  slot.setAttribute('role','status');
+  slot.classList.remove('show','error');
+  void slot.offsetWidth; // restart animation
+  slot.classList.add('show', type);
+
+  const undoBtn = slot.querySelector('.undo');
+  if(undoBtn){
+    undoBtn.onclick = () => {
+      // Prevent multiple undo actions
+      if(undoBtn.disabled) return;
+      undoBtn.disabled = true;
+      const item = state.cart.find(i => i.id === productId);
+      if(item){
+        if(item.qty <= 1) {
+          removeCartItem(productId);
+        } else {
+          updateCartItem(productId, item.qty - 1);
+        }
+        renderCart();
+        slot.querySelector('.msg').textContent = 'Removed';
+        slot.classList.add('removed');
+      }
+      clearTimeout(slot._hideTO);
+      slot._hideTO = setTimeout(()=>{ slot.classList.remove('show'); }, 1400);
+    };
+  }
+  clearTimeout(slot._hideTO);
+  slot._hideTO = setTimeout(()=>{ slot.classList.remove('show'); }, 2200);
+}
+
 // Enhanced scroll animations
 function initScrollAnimations() {
   const observerOptions = {
@@ -738,17 +822,31 @@ function initModeToggle(){
     const enable = !document.body.classList.contains('glass-mode');
     enableGlassMode(enable);
   });
+  // Keyboard accessibility for role="switch"
+  btn.addEventListener('keydown', (e) => {
+    if(e.key === ' ' || e.key === 'Enter') { e.preventDefault(); btn.click(); }
+  });
 }
 
 function enableGlassMode(enable){
   const btn = document.getElementById('modeToggle');
   if(enable){
     document.body.classList.add('glass-mode');
-    btn && (btn.setAttribute('aria-pressed','true'), btn.textContent='Normal');
+    if(btn){
+      btn.setAttribute('aria-pressed','true');
+      btn.setAttribute('aria-checked','true');
+      btn.setAttribute('aria-label','Disable Glass Mode');
+      btn.classList.add('on');
+    }
     localStorage.setItem('kyboot_ui_mode','glass');
   } else {
     document.body.classList.remove('glass-mode');
-    btn && (btn.setAttribute('aria-pressed','false'), btn.textContent='Glass');
+    if(btn){
+      btn.setAttribute('aria-pressed','false');
+      btn.setAttribute('aria-checked','false');
+      btn.setAttribute('aria-label','Enable Glass Mode');
+      btn.classList.remove('on');
+    }
     localStorage.setItem('kyboot_ui_mode','normal');
   }
 }

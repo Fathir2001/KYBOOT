@@ -28,7 +28,10 @@
         <button id="cartBtn" class="cart-btn" aria-haspopup="dialog" aria-controls="cartPanel">
           Cart <span id="cartCount" class="cart-count">0</span>
         </button>
-        <button id="modeToggle" class="mode-toggle" aria-pressed="false" title="Toggle Glass UI">Glass</button>
+        <button id="modeToggle" class="mode-toggle ios-switch" role="switch" aria-checked="false" aria-pressed="false" aria-label="Enable Glass Mode" title="Toggle Glass UI">
+          <span class="track"></span>
+          <span class="thumb"></span>
+        </button>
       </nav>
     </div>
   </header>
@@ -82,5 +85,8 @@
   </footer>
 
   <script src="app.js"></script>
+  <!-- Dialog / Toast Containers -->
+  <div id="uiDialogRoot" class="ui-dialog-root" aria-live="polite"></div>
+  <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="false"></div>
 </body>
 </html>
