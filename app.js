@@ -13,7 +13,7 @@ const PRODUCTS = [
     price: 349,
     category: 'Sneakers',
     description: 'Lightweight everyday sneaker with ergonomic sole and breathable mesh.',
-    image: 'https://us.kybun.swiss/cdn/shop/files/66d9800507301KY512A_a_46f42217-8c04-4d81-b455-7949bbf7f4bc.png?v=1754918322&width=533'
+    image: 'https://images.ctfassets.net/hnk2vsx53n6l/4gUWSLm8iWX5eOoDpKVwxo/b6e653f79f6836c7ad8027fc40723e08/bbfd217f59a6fd93f4510e4502ee11530eeb2d7b.png?w=1500&h=1500&fm=jpg&fl=progressive&f=center&fit=fill&q=80'
   },
   {
     id: 'kb-002',
@@ -213,36 +213,53 @@ function initBackgroundOrbs(){
 
 /* ---------- Background Sprinting Streak Effect ---------- */
 function initBackgroundStreaks(){
+  // Now spawns small "butterflies" that flap & drift when cursor sprints
   const layer = document.getElementById('bgFX');
   if(!layer) return;
   let last = { x: null, y: null, t: 0 };
-  const maxStreaks = 40;
-  const minDist = 14; // minimum movement to spawn a streak
-  const minInterval = 28; // ms throttle
+  const maxButterflies = 34;
+  const minDist = 14; // minimum movement to consider
+  const minInterval = 26; // ms throttle
+  const speedThreshold = 320; // px/sec required to spawn a butterfly
 
-  function spawn(x, y, dx, dy, speed){
-    // Avoid spawning over cards to keep tilt focus
+  const palettes = [
+    [210,260], // blue / violet
+    [190,330], // aqua / pink
+    [270,320], // purple / magenta
+    [35,210],  // amber / teal
+    [150,200]  // green / cyan
+  ];
+
+  function spawnButterfly(x, y, dx, dy, speed){
+    if(speed < speedThreshold) return; // only on sprint
+    // Avoid spawning over interactive card to reduce clutter
     const el = document.elementFromPoint(x, y);
     if(el && el.closest('.card')) return;
-    const streak = document.createElement('div');
-    streak.className = 'streak';
-    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-    // Speed normalization
-    const normSpeed = Math.min(Math.max(speed, 40), 1600); // clamp
-    const len = (normSpeed / 220).toFixed(2); // length scaling
-    const hueBase = 190 + (normSpeed / 1600) * 120; // shift hue with speed
-    const thickness = (Math.min(Math.max(speed,40), 900) / 900) * 0.9 + 0.5; // scale thickness subtly
-    streak.style.setProperty('--angle', angle.toFixed(2)+'deg');
-    streak.style.setProperty('--len', (len + 0.65).toString());
-    streak.style.setProperty('--thick', thickness.toFixed(2));
-    streak.style.setProperty('--h', hueBase.toFixed(1));
-    streak.style.left = x + 'px';
-    streak.style.top = y + 'px';
-    layer.appendChild(streak);
-    setTimeout(() => streak.remove(), 700);
-    const all = layer.querySelectorAll('.streak');
-    if(all.length > maxStreaks){
-      for(let i=0;i< all.length - maxStreaks; i++) all[i].remove();
+    const b = document.createElement('div');
+    b.className = 'butterfly';
+    const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+    const spNorm = Math.min(Math.max(speed, speedThreshold), 2000);
+    const scale = (0.65 + (spNorm - speedThreshold)/2000).toFixed(2);
+    const life = (650 + Math.random()*420)|0; // ms
+    const flap = (340 + Math.random()*160)|0; // ms
+    const driftX = (Math.random()*60 - 30).toFixed(1) + 'px';
+    const driftY = (-(Math.random()*60 + 40)).toFixed(1) + 'px';
+    const [h1,h2] = palettes[Math.floor(Math.random()*palettes.length)];
+    b.style.left = x + 'px';
+    b.style.top = y + 'px';
+    b.style.setProperty('--r', ang + 'deg');
+    b.style.setProperty('--s', scale);
+    b.style.setProperty('--dx', driftX);
+    b.style.setProperty('--dy', driftY);
+    b.style.setProperty('--life', life + 'ms');
+    b.style.setProperty('--flap', flap + 'ms');
+    b.style.setProperty('--h1', h1);
+    b.style.setProperty('--h2', h2);
+    layer.appendChild(b);
+    setTimeout(() => b.remove(), life + 60);
+    const all = layer.querySelectorAll('.butterfly');
+    if(all.length > maxButterflies){
+      for(let i=0;i< all.length - maxButterflies; i++) all[i].remove();
     }
   }
 
@@ -255,7 +272,7 @@ function initBackgroundStreaks(){
     const dt = now - last.t || 1;
     if(dist < minDist || dt < minInterval){ return; }
     const speed = dist / dt * 1000; // px per second
-    spawn(e.clientX, e.clientY, dx, dy, speed);
+    spawnButterfly(e.clientX, e.clientY, dx, dy, speed);
     last = { x: e.clientX, y: e.clientY, t: now };
   }, { passive: true });
 }

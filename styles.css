@@ -104,6 +104,13 @@
   body.glass-mode .bg-fx { mix-blend-mode: normal; opacity:0.9; }
   body.glass-mode .mode-toggle { background: var(--accent-gradient); color:#fff; }
 
+  /* --- Minimal readability tweak per user request: only increase weight --- */
+  body.glass-mode .hero p { font-weight: 600; }
+  body.glass-mode .stats { font-weight: 700; }
+  body.glass-mode .actions select { font-weight: 600; color:#1e293b; }
+  body.glass-mode #resultsCount { font-weight: 800; }
+  body.glass-mode .hero .badge { font-weight:700; }
+
   /* Mode toggle button */
   .mode-toggle {
     padding: 10px 14px;
@@ -239,36 +246,46 @@
     touch-action: none;
   }
 
-  /* Cursor ripple (water drop) */
-  /* Sprinting streak trail (replaces ripple) */
-  .bg-fx .streak {
+  /* Cursor ripple (legacy comment) */
+  /* Sprinting butterflies trail (replaces streak trail) */
+  .bg-fx .butterfly {
     position:absolute;
     top:0; left:0;
-    width:14px; height:14px;
+    width:18px; height:14px;
     pointer-events:none;
-    transform-origin: center left;
-    transform: translate(-50%, -50%) rotate(var(--angle,0deg)) scaleX(var(--len,1)) scaleY(var(--thick,1));
-    border-radius: 80px;
-    background: linear-gradient(90deg,
-      hsla(var(--h,210), 90%, 72%, .9) 0%,
-      hsla(calc(var(--h,210) + 40), 95%, 65%, .55) 45%,
-      hsla(calc(var(--h,210) + 80), 90%, 55%, 0) 90%);
+    transform: translate(-50%, -50%) rotate(var(--r,0deg)) scale(var(--s,1));
+    animation: butterflyFlight var(--life,900ms) ease-out forwards;
     mix-blend-mode: screen;
-    filter: brightness(1.15) saturate(1.5) drop-shadow(0 0 6px hsla(var(--h,210),90%,70%,.55));
-    animation: streakFade .65s ease-out forwards;
+    filter: brightness(1.15) saturate(1.5) drop-shadow(0 0 4px hsla(var(--h1,210),90%,70%,.55));
+    will-change: transform, opacity;
   }
-  .bg-fx .streak::after {
-    content:'';
-    position:absolute; inset:0;
-    background: radial-gradient(circle at 18% 50%, rgba(255,255,255,0.9), rgba(255,255,255,0) 65%);
-    filter: blur(4px);
-    opacity:.75;
+  /* wings */
+  .bg-fx .butterfly::before,
+  .bg-fx .butterfly::after {
+    content:"";
+    position:absolute;
+    top:50%; left:50%;
+    width:12px; height:14px;
+    border-radius:60% 60% 45% 45%;
+    background: radial-gradient(circle at 30% 35%, rgba(255,255,255,.9), rgba(255,255,255,0) 60%),
+               radial-gradient(circle at 60% 60%, hsla(var(--h1,210),85%,70%,.85), hsla(var(--h2,260),70%,55%,0) 70%);
+    transform-origin: 0% 50%;
+    animation: wingFlap var(--flap,420ms) ease-in-out infinite;
     mix-blend-mode: overlay;
   }
-  @keyframes streakFade {
-    0% { opacity:.92; filter: blur(0px) brightness(1.1) saturate(1.4); }
-    55% { opacity:.55; }
-    100% { opacity:0; filter: blur(6px) brightness(0.9) saturate(1); transform: translate(-50%, -50%) rotate(var(--angle,0deg)) scaleX(calc(var(--len,1) * 1.25)) scaleY(var(--thick,1)); }
+  .bg-fx .butterfly::before { transform: translate(-50%, -50%) rotateY(0deg) rotateZ(-8deg); }
+  .bg-fx .butterfly::after {
+    transform: translate(-50%, -50%) scaleX(-1) rotateZ(8deg);
+  }
+  @keyframes wingFlap {
+    0%,100% { transform: translate(-50%, -50%) rotateY(0deg) rotateZ(var(--z, -8deg)); }
+    50% { transform: translate(-50%, -50%) rotateY(55deg) rotateZ(var(--z, -8deg)); }
+  }
+  @keyframes butterflyFlight {
+    0% { opacity:0; transform: translate(-50%, -50%) translate(var(--ox,0), var(--oy,0)) rotate(var(--r,0deg)) scale(var(--s,1)); }
+    10% { opacity:1; }
+    70% { opacity:.95; }
+    100% { opacity:0; transform: translate(-50%, -50%) translate(calc(var(--ox,0) + var(--dx,0px)), calc(var(--oy,0) + var(--dy,-40px))) rotate(calc(var(--r,0deg) + 25deg)) scale(calc(var(--s,1) * .8)); }
   }
 
   /* --- Enhanced Cursor FX: follower glow + sparks --- */
