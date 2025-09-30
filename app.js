@@ -565,10 +565,10 @@ function renderCart(){
           <div style="font-weight:700">${escapeHtml(p.title)}</div>
           <div style="color:var(--muted);font-size:13px">${p.price.toFixed(2)} QAR</div>
           <div class="qty" style="margin-top:6px">
-            <button class="btn" data-action="dec" data-id="${p.id}">-</button>
-            <input class="cart-qty" data-id="${p.id}" type="number" min="1" value="${it.qty}" style="width:56px;padding:6px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)" />
-            <button class="btn" data-action="inc" data-id="${p.id}">+</button>
-            <button class="btn" style="margin-left:8px" data-action="remove" data-id="${p.id}">Remove</button>
+            <button class="qty-btn" data-action="dec" data-id="${p.id}" aria-label="Decrease quantity">−</button>
+            <input class="cart-qty" data-id="${p.id}" type="number" min="1" value="${it.qty}" aria-label="Quantity for ${escapeHtml(p.title)}" />
+            <button class="qty-btn" data-action="inc" data-id="${p.id}" aria-label="Increase quantity">+</button>
+            <button class="btn small" style="margin-left:4px" data-action="remove" data-id="${p.id}">Remove</button>
           </div>
         </div>
       `;
