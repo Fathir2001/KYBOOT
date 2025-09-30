@@ -46,19 +46,19 @@
   }
   /* Glass mode overrides (applied via body.glass-mode) */
   body.glass-mode {
-    --bg: radial-gradient(circle at 30% 30%, rgba(59,130,246,0.12), transparent 60%),
-           radial-gradient(circle at 70% 70%, rgba(139,92,246,0.10), transparent 65%),
-           linear-gradient(135deg,#0f172a 0%, #152337 40%, #1e293b 62%, #25354a 85%, #334155 100%);
+    --bg: radial-gradient(circle at 30% 30%, rgba(59,130,246,0.10), transparent 58%),
+          radial-gradient(circle at 70% 70%, rgba(139,92,246,0.08), transparent 62%),
+          linear-gradient(135deg,#0f172a 0%, #182638 42%, #1f2f44 62%, #273a50 85%, #334155 100%);
     --bg-solid:#0f172a;
-    --card: rgba(255,255,255,0.08);
-    --card-hover: rgba(255,255,255,0.12);
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --muted: #94a3b8;
-    --shadow-sm: 0 2px 8px rgba(0,0,0,0.4);
-    --shadow: 0 8px 25px rgba(0,0,0,0.55);
-    --shadow-lg: 0 16px 40px rgba(0,0,0,0.6);
-    --shadow-hover: 0 24px 70px -10px rgba(0,0,0,0.75);
+    --card: rgba(255,255,255,0.14);
+    --card-hover: rgba(255,255,255,0.20);
+    --text-primary: #f8fafc;
+    --text-secondary: #d2dcea;
+    --muted: #9dacbb;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.45);
+    --shadow: 0 8px 28px rgba(0,0,0,0.6);
+    --shadow-lg: 0 18px 42px rgba(0,0,0,0.65);
+    --shadow-hover: 0 26px 72px -12px rgba(0,0,0,0.78);
     color-scheme: dark;
   }
   body.glass-mode .site-header,
@@ -71,24 +71,28 @@
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
   }
-  /* Smooth bridge between hero and product area in glass mode */
+  /* Toned & isolated overlay for hero in glass mode */
+  body.glass-mode .hero { isolation:isolate; }
   body.glass-mode .hero::after {
     content:'';
     position:absolute; left:0; right:0; bottom:-140px;
-    height:240px;
+    height:240px; z-index:0;
     background:
-      radial-gradient(ellipse at center, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.15) 40%, rgba(255,255,255,0) 70%);
+      radial-gradient(ellipse at center, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.12) 45%, rgba(255,255,255,0) 72%);
     pointer-events:none;
-    filter: blur(30px) saturate(160%);
-    opacity:.9;
-    mix-blend-mode: screen;
+    filter: blur(18px) saturate(140%);
+    opacity:.45;
+    mix-blend-mode: normal;
   }
+  body.glass-mode .hero > * { position:relative; z-index:1; }
   body.glass-mode .products-grid { margin-top: 0; padding-top: 120px; }
   body.glass-mode .products-grid::before {
-    content:''; position:absolute; left:0; right:0; top:0; height:160px; pointer-events:none;
-    background: linear-gradient(to bottom, rgba(255,255,255,0.3), rgba(255,255,255,0.14) 40%, rgba(255,255,255,0) 100%);
-    mix-blend-mode: screen; filter: blur(10px);
+    content:''; position:absolute; left:0; right:0; top:0; height:160px; pointer-events:none; z-index:0;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.15), rgba(255,255,255,0) 90%);
+    mix-blend-mode: normal; filter: blur(6px); opacity:.7;
   }
+  body.glass-mode .hero h1,
+  body.glass-mode .hero p { text-shadow: 0 2px 6px rgba(0,0,0,0.25); }
   body.glass-mode .card,
   body.glass-mode .stats,
   body.glass-mode .cart-panel,
