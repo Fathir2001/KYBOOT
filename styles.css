@@ -943,6 +943,30 @@
     transform: translateY(-4px) scale(1.05);
     box-shadow: var(--shadow-colored);
   }
+  /* Inline add-to-cart feedback */
+  .inline-feedback {
+    font-size:11.5px;
+    font-weight:600;
+    margin-left:6px;
+    padding:6px 10px;
+    border-radius:999px;
+    background:rgba(16,185,129,0.12);
+    color:var(--success);
+    border:1px solid rgba(16,185,129,0.35);
+    opacity:0;
+    transform:translateY(-4px) scale(.9);
+    transition:opacity .35s var(--transition-fast), transform .45s var(--transition-bounce);
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    pointer-events:auto;
+    white-space:nowrap;
+  }
+  .inline-feedback.show { opacity:1; transform:translateY(0) scale(1); }
+  .inline-feedback.error { background:rgba(239,68,68,0.12); color:var(--error); border-color:rgba(239,68,68,0.4); }
+  .inline-feedback.removed { background:rgba(239,68,68,0.12); color:var(--error); border-color:rgba(239,68,68,0.45); }
+  .inline-feedback .undo { background:none; border:0; color:var(--accent); cursor:pointer; font-weight:700; font-size:11px; padding:0; }
+  .inline-feedback .undo:hover { text-decoration:underline; }
   /* Enhanced Buttons */
   .btn {
     background: rgba(255, 255, 255, 0.9);

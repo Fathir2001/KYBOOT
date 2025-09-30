@@ -508,16 +508,14 @@ function renderProducts(){
         if (action === 'add') {
           addToCart(id, 1);
           renderCart();
-          // Enhanced cart button animation
           const cartEl = document.getElementById('cartBtn');
           if (cartEl) {
             cartEl.style.animation = 'none';
-            cartEl.offsetHeight; // Trigger reflow
+            cartEl.offsetHeight;
             cartEl.style.animation = 'pulse 0.6s ease-in-out';
           }
-          
-          // Show success feedback
-          showNotification('Added to cart!', 'success');
+          // Inline feedback under product card instead of global top-right notification
+          showInlineProductFeedback(e.currentTarget, id, 'Added');
         }
       });
     });
@@ -670,6 +668,48 @@ function showNotification(message, type = 'info', duration = 3000) {
       }
     }, 300);
   }, duration);
+}
+
+// Inline per-product feedback (beside button) with Undo capability
+function showInlineProductFeedback(triggerBtn, productId, message='Added', type='success') {
+  if(!triggerBtn) return;
+  const container = triggerBtn.parentElement; // flex wrapper containing the button
+  if(!container) return;
+  let slot = container.querySelector('.inline-feedback');
+  if(!slot){
+    slot = document.createElement('div');
+    slot.className = 'inline-feedback';
+    container.appendChild(slot);
+  }
+  slot.innerHTML = `<span class="msg">${escapeHtml(message)} to cart</span><button type="button" class="undo" aria-label="Undo add">Undo</button>`;
+  slot.setAttribute('role','status');
+  slot.classList.remove('show','error');
+  void slot.offsetWidth; // restart animation
+  slot.classList.add('show', type);
+
+  const undoBtn = slot.querySelector('.undo');
+  if(undoBtn){
+    undoBtn.onclick = () => {
+      // Prevent multiple undo actions
+      if(undoBtn.disabled) return;
+      undoBtn.disabled = true;
+      const item = state.cart.find(i => i.id === productId);
+      if(item){
+        if(item.qty <= 1) {
+          removeCartItem(productId);
+        } else {
+          updateCartItem(productId, item.qty - 1);
+        }
+        renderCart();
+        slot.querySelector('.msg').textContent = 'Removed';
+        slot.classList.add('removed');
+      }
+      clearTimeout(slot._hideTO);
+      slot._hideTO = setTimeout(()=>{ slot.classList.remove('show'); }, 1400);
+    };
+  }
+  clearTimeout(slot._hideTO);
+  slot._hideTO = setTimeout(()=>{ slot.classList.remove('show'); }, 2200);
 }
 
 // Enhanced scroll animations
