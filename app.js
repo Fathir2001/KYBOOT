@@ -415,28 +415,27 @@ function attachControls() {
   // Modal removed: no related listeners
 
   document.getElementById('checkoutBtn').addEventListener('click', () => {
-    if (state.cart.length === 0) {
-      alert('Your cart is empty.');
-      return;
-    }
-    // Mock checkout � in a real app you'd connect to payment & backend
+    if (state.cart.length === 0) { showToast('Your cart is empty.', 'error'); return; }
     const total = calcSubtotal();
-    if (confirm(`Proceed to checkout? Subtotal: ${total.toFixed(2)} QAR`)) {
-      // Clear cart after mock checkout
-      state.cart = [];
-      saveCart();
-      renderCart();
-      toggleCartPanel(false);
-      alert('Thank you! Your order has been placed (mock).');
-    }
+    showDialog({
+      title: 'Proceed to Checkout',
+      message: `Subtotal: <strong>${total.toFixed(2)} QAR</strong><br><small class="dialog-subnote">You will review shipping & payment next.</small>`,
+      confirmText: 'Continue',
+      cancelText: 'Cancel',
+      onConfirm: () => { window.location.href = 'checkout.html'; }
+    });
   });
 
   document.getElementById('clearCart').addEventListener('click', () => {
-    if (confirm('Clear cart?')) {
-      state.cart = [];
-      saveCart();
-      renderCart();
-    }
+    if(state.cart.length === 0){ showToast('Cart already empty','info'); return; }
+    showDialog({
+      title: 'Clear Cart',
+      message: 'Remove all items from your cart?',
+      confirmText: 'Clear',
+      confirmType: 'destructive',
+      cancelText: 'Cancel',
+      onConfirm: () => { state.cart = []; saveCart(); renderCart(); showToast('Cart cleared','success'); }
+    });
   });
 }
 
@@ -668,6 +667,51 @@ function showNotification(message, type = 'info', duration = 3000) {
       }
     }, 300);
   }, duration);
+}
+
+/* ---------- Site-wide Dialog & Toast (replaces alert/confirm) ---------- */
+function ensureDialogRoots(){
+  if(!document.getElementById('uiDialogRoot')){
+    const dlgRoot = document.createElement('div'); dlgRoot.id='uiDialogRoot'; dlgRoot.className='ui-dialog-root'; document.body.appendChild(dlgRoot);
+    const toast = document.createElement('div'); toast.id='toastStack'; toast.className='toast-stack'; document.body.appendChild(toast);
+  }
+}
+
+function showDialog({ title='Notice', message='', confirmText='OK', cancelText=null, confirmType='', onConfirm=null, onCancel=null }={}) {
+  ensureDialogRoots();
+  const root = document.getElementById('uiDialogRoot');
+  root.innerHTML = '';
+  root.classList.add('visible');
+  const overlay = document.createElement('div'); overlay.className='ui-dialog-overlay';
+  const dlg = document.createElement('div'); dlg.className='ui-dialog'; dlg.setAttribute('role','dialog'); dlg.setAttribute('aria-modal','true'); dlg.innerHTML = `
+    <button class="close-x" aria-label="Close">×</button>
+    <h3>${title}</h3>
+    <p>${message}</p>
+    <div class="actions"></div>`;
+  const actions = dlg.querySelector('.actions');
+  if(cancelText){
+    const cancelBtn = document.createElement('button'); cancelBtn.type='button'; cancelBtn.className='btn'; cancelBtn.textContent = cancelText; cancelBtn.onclick = closeCancel; actions.appendChild(cancelBtn);
+  }
+  const confirmBtn = document.createElement('button'); confirmBtn.type='button'; confirmBtn.className='btn primary'; if(confirmType==='destructive') confirmBtn.classList.add('destructive'); confirmBtn.textContent = confirmText; confirmBtn.onclick = () => { close(); onConfirm && onConfirm(); };
+  actions.appendChild(confirmBtn);
+  dlg.querySelector('.close-x').onclick = closeCancel;
+  function close(){ root.classList.remove('visible'); root.innerHTML=''; }
+  function closeCancel(){ close(); onCancel && onCancel(); }
+  document.addEventListener('keydown', escHandler);
+  function escHandler(e){ if(e.key==='Escape'){ closeCancel(); document.removeEventListener('keydown', escHandler); } }
+  root.appendChild(overlay); root.appendChild(dlg);
+  setTimeout(()=> confirmBtn.focus(), 40);
+  return { close };
+}
+
+function showToast(message, type='info', duration=4000){
+  ensureDialogRoots();
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div'); el.className = `toast ${type}`; el.innerHTML = `<span>${message}</span>`;
+  const dismiss = document.createElement('button'); dismiss.type='button'; dismiss.textContent='×'; dismiss.setAttribute('aria-label','Dismiss'); dismiss.onclick = () => remove(); el.appendChild(dismiss);
+  stack.appendChild(el);
+  function remove(){ if(!el.parentNode) return; el.style.opacity='0'; el.style.transform='translateY(-6px)'; setTimeout(()=> el.remove(), 260); }
+  setTimeout(remove, duration);
 }
 
 // Inline per-product feedback (beside button) with Undo capability

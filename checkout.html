@@ -272,7 +272,7 @@
     // Basic form submission
     document.getElementById('checkoutForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      if(cart.length===0){ alert('Cart empty'); return; }
+      if(cart.length===0){ showToast('Your cart is empty', 'error'); return; }
       const form = e.target;
       const required = form.querySelectorAll('[required]');
       let firstInvalid = null;
@@ -292,8 +292,12 @@
         localStorage.setItem('kyboot_cart_v1','[]');
         btn.textContent='Order Placed!';
         btn.classList.add('success');
-        alert('Thank you! Your order has been placed (demo).');
-        window.location.href='index.html';
+        showDialog({
+          title:'Order Placed',
+          message:'Thank you! Your order has been placed (demo).',
+          confirmText:'Return Home',
+          onConfirm: () => { window.location.href='index.html'; }
+        });
       }, 1200);
     });
 

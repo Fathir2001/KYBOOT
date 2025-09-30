@@ -1545,6 +1545,26 @@
   body.glass-mode .cart-panel .notification { color:#fff; }
   /* Ensure product meta paragraph within cart (if any) has proper contrast */
   body.glass-mode .cart-panel p { color: var(--text-secondary); }
+  /* Custom Dialog & Toast */
+  .ui-dialog-root { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:4000; }
+  .ui-dialog-root.visible { pointer-events:auto; }
+  .ui-dialog-overlay { position:absolute; inset:0; background:rgba(15,23,42,0.45); backdrop-filter:blur(10px); opacity:0; animation: fadeIn .35s forwards; }
+  .ui-dialog { position:relative; max-width:420px; width:calc(100% - 32px); background:var(--card); border-radius:24px; padding:34px 34px 30px; box-shadow:0 28px 60px -20px rgba(15,23,42,.35), var(--shadow); border:1px solid rgba(59,130,246,0.15); transform: translateY(24px) scale(.96); animation: dialogIn .5s var(--transition-bounce) forwards; }
+  @keyframes dialogIn { 0% { opacity:0; transform:translateY(38px) scale(.9) rotateX(8deg); } 60% { opacity:1; transform:translateY(-6px) scale(1.015); } 100% { opacity:1; transform:translateY(0) scale(1); } }
+  .ui-dialog h3 { margin:0 0 8px; font-size:22px; font-weight:700; letter-spacing:-0.02em; }
+  .ui-dialog p { margin:0 0 22px; font-size:15px; line-height:1.5; color:var(--text-secondary); }
+  .ui-dialog .actions { display:flex; gap:12px; justify-content:flex-end; }
+  .ui-dialog .actions .btn { flex:0 0 auto; }
+  .ui-dialog .actions .btn.primary.destructive { background:linear-gradient(135deg,#ef4444,#f87171); box-shadow:0 6px 20px -6px rgba(239,68,68,.55); }
+  .ui-dialog .close-x { position:absolute; top:10px; right:10px; background:rgba(59,130,246,0.12); border:0; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:20px; font-weight:700; line-height:1; color:var(--accent); display:flex; align-items:center; justify-content:center; }
+  .ui-dialog .close-x:hover { background:var(--accent-gradient); color:#fff; }
+  .toast-stack { position:fixed; top:16px; right:16px; display:flex; flex-direction:column; gap:10px; z-index:4100; max-width:340px; }
+  .toast { background:var(--card); border:1px solid rgba(59,130,246,0.2); padding:14px 18px; border-radius:14px; font-size:14px; font-weight:500; box-shadow:var(--shadow); display:flex; gap:10px; align-items:flex-start; animation: fadeIn .4s ease, slideInUp .6s ease; position:relative; overflow:hidden; }
+  .toast.success { border-color:rgba(16,185,129,0.4); }
+  .toast::after { content:''; position:absolute; left:0; bottom:0; height:3px; width:100%; background:var(--accent-gradient); animation: toastBar 4s linear forwards; }
+  @keyframes toastBar { to { width:0; } }
+  .toast button { margin-left:auto; background:none; border:0; color:var(--accent); font-weight:600; cursor:pointer; }
+  .toast button:hover { text-decoration:underline; }
   /* Ensure 'Remove' button text visible inside cart items */
   body.glass-mode .cart-item .btn.small { 
     background: rgba(255,255,255,0.9); 
@@ -1561,6 +1581,78 @@
   body.glass-mode .cart-item .btn.small:active { 
     transform: translateY(-1px) scale(1.02); 
   }
+
+  /* ------------------------------------------------------------ */
+  /* Glass Mode Readability & Contrast Enhancements (accessibility)
+     Addresses low-contrast small / secondary text reported by user. */
+  body.glass-mode { --glass-panel-strength: rgba(255,255,255,0.24); }
+  body.glass-mode .panel,
+  body.glass-mode .cart-panel,
+  body.glass-mode .ui-dialog,
+  body.glass-mode .modal-content {
+    background: linear-gradient(145deg, rgba(255,255,255,0.30), rgba(255,255,255,0.18)) !important;
+    backdrop-filter: blur(26px) saturate(185%) !important;
+    -webkit-backdrop-filter: blur(26px) saturate(185%) !important;
+    border:1px solid rgba(255,255,255,0.28) !important;
+  }
+  /* Elevate checkout side summary specifically (if it uses .panel) */
+  body.glass-mode .order-summary.panel { box-shadow:0 18px 46px -18px rgba(0,0,0,0.65), var(--shadow); }
+  /* Heading & structural text clarity */
+  body.glass-mode .panel h1,
+  body.glass-mode .panel h2,
+  body.glass-mode .panel h3,
+  body.glass-mode .ui-dialog h3 { color:#fff; text-shadow:0 2px 6px rgba(0,0,0,0.45); }
+  /* Secondary / muted copy inside glass surfaces */
+  body.glass-mode .panel p,
+  body.glass-mode .panel .inline-note,
+  body.glass-mode .panel .secure-badge,
+  body.glass-mode .panel .field label,
+  body.glass-mode .ui-dialog p,
+  body.glass-mode .summary-item .meta .q { color: rgba(255,255,255,0.83) !important; }
+  /* Ensure quantitative / emphasis text remains vivid */
+  body.glass-mode .summary-item .price,
+  body.glass-mode #reviewTotal,
+  body.glass-mode #sumTotal { filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45)); }
+  /* Form fields inside glass panels */
+  body.glass-mode .panel .field input,
+  body.glass-mode .panel .field select,
+  body.glass-mode .panel .field textarea { background: rgba(255,255,255,0.92); color:#0f172a; border:2px solid rgba(255,255,255,0.65); }
+  body.glass-mode .panel .field input:focus,
+  body.glass-mode .panel .field select:focus,
+  body.glass-mode .panel .field textarea:focus { border-color: var(--accent); box-shadow:0 0 0 3px rgba(59,130,246,0.55); background:#fff; }
+  /* Buttons: keep non-primary buttons clearly legible */
+  body.glass-mode .panel .btn:not(.primary) { background: rgba(255,255,255,0.9); color:#0f172a; border:2px solid rgba(59,130,246,0.28); }
+  body.glass-mode .panel .btn:not(.primary):hover { background:#fff; border-color: var(--accent); }
+  /* Dialog specific elevating ring */
+  body.glass-mode .ui-dialog { box-shadow:0 28px 72px -18px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.08) inset; }
+  body.glass-mode .ui-dialog .close-x { background:rgba(255,255,255,0.18); color:#fff; }
+  body.glass-mode .ui-dialog .close-x:hover { background: var(--accent-gradient); color:#fff; }
+  /* Tiny text (badges / labels) strengthen contrast */
+  body.glass-mode .badge-pill,
+  body.glass-mode .steps .step.active { box-shadow:0 4px 14px -4px rgba(0,0,0,0.6); }
+  /* Edge: ensure error messages remain visible */
+  body.glass-mode .field.error .err-msg { color:#ef4444; text-shadow:0 1px 2px rgba(0,0,0,0.5); }
+  /* Accessibility: prefers-contrast users get even stronger surfaces */
+  @media (prefers-contrast: more) {
+    body.glass-mode .panel,
+    body.glass-mode .cart-panel,
+    body.glass-mode .ui-dialog,
+    body.glass-mode .modal-content { background: rgba(15,23,42,0.78) !important; border-color:rgba(255,255,255,0.38) !important; }
+    body.glass-mode .panel p,
+    body.glass-mode .panel .field label { color:#f1f5f9 !important; }
+  }
+  /* Reduce motion: skip heavy blur transitions if any were added later */
+  @media (prefers-reduced-motion: reduce) { body.glass-mode .panel, body.glass-mode .ui-dialog { transition:none; } }
+
+  /* Dialog sub-note (replaces inline style) */
+  .ui-dialog .dialog-subnote { color: var(--muted); font-weight:500; display:inline-block; margin-top:4px; }
+  body.glass-mode .ui-dialog .dialog-subnote { color: rgba(255,255,255,0.85); font-weight:600; text-shadow:0 1px 3px rgba(0,0,0,0.55); }
+  /* Cancel button contrast inside dialog for glass mode */
+  body.glass-mode .ui-dialog .actions .btn:not(.primary) { background: rgba(255,255,255,0.92); color:#0f172a; border:2px solid rgba(59,130,246,0.28); box-shadow:0 2px 6px -2px rgba(0,0,0,0.4); }
+  body.glass-mode .ui-dialog .actions .btn:not(.primary):hover { background:#fff; border-color: var(--accent); }
+  body.glass-mode .ui-dialog .actions .btn.primary { box-shadow:0 6px 20px -6px rgba(59,130,246,0.7); }
+  .ui-dialog .actions .btn:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+
 
   /* Print Styles */
   @media print {
