@@ -376,16 +376,21 @@ function attachControls() {
     toggleCartPanel(true);
   });
   safeEl('closeCart')?.addEventListener('click', () => toggleCartPanel(false));
+  // Prevent clicks inside cart panel from bubbling to document close handler
+  cartPanel?.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
   
   // Close cart when clicking outside of it
   document.addEventListener('click', (e) => {
-    const cartPanel = document.getElementById('cartPanel');
-    const cartBtn = document.getElementById('cartBtn');
-    
-    // Check if cart is open and click is outside cart and cart button
-    if (cartPanel.getAttribute('aria-hidden') === 'false' && 
-        !cartPanel.contains(e.target) && 
-        !cartBtn.contains(e.target)) {
+    const panelEl = document.getElementById('cartPanel');
+    const btnEl = document.getElementById('cartBtn');
+    if (!panelEl || !btnEl) return;
+    if (panelEl.getAttribute('aria-hidden') === 'false') {
+      // Use composedPath to reliably detect internal clicks even if DOM changed during render
+      const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      if (path.includes(panelEl) || path.includes(btnEl)) return; // internal click
+      if (panelEl.contains(e.target) || btnEl.contains(e.target)) return; // fallback
       toggleCartPanel(false);
     }
   });
@@ -565,10 +570,10 @@ function renderCart(){
           <div style="font-weight:700">${escapeHtml(p.title)}</div>
           <div style="color:var(--muted);font-size:13px">${p.price.toFixed(2)} QAR</div>
           <div class="qty" style="margin-top:6px">
-            <button class="qty-btn" data-action="dec" data-id="${p.id}" aria-label="Decrease quantity">−</button>
-            <input class="cart-qty" data-id="${p.id}" type="number" min="1" value="${it.qty}" aria-label="Quantity for ${escapeHtml(p.title)}" />
-            <button class="qty-btn" data-action="inc" data-id="${p.id}" aria-label="Increase quantity">+</button>
-            <button class="btn small" style="margin-left:4px" data-action="remove" data-id="${p.id}">Remove</button>
+        <button class="qty-btn" data-action="dec" data-id="${p.id}" aria-label="Decrease quantity" style="font-size:14px;padding:2px 6px;">−</button>
+        <input class="cart-qty" data-id="${p.id}" type="number" min="1" value="${it.qty}" aria-label="Quantity for ${escapeHtml(p.title)}" />
+        <button class="qty-btn" data-action="inc" data-id="${p.id}" aria-label="Increase quantity" style="font-size:14px;padding:2px 6px;">+</button>
+        <button class="btn small" style="margin-left:4px;font-size:12px;padding:2px 8px;" data-action="remove" data-id="${p.id}">Remove</button>
           </div>
         </div>
       `;
