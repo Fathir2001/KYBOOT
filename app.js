@@ -150,6 +150,12 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCart();
   initScrollAnimations();
   document.getElementById('year').textContent = new Date().getFullYear();
+  initBackgroundOrbs();
+  initModeToggle();
+  // apply persisted mode
+  if(localStorage.getItem('kyboot_ui_mode') === 'glass'){ enableGlassMode(true); }
+  initBackgroundStreaks();
+  initCursorFX();
   
   // Add page load animation
   document.body.style.opacity = '0';
@@ -158,6 +164,181 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.style.opacity = '1';
   }, 100);
 });
+
+/* ---------- Ambient Background Orbs ---------- */
+function initBackgroundOrbs(){
+  const container = document.getElementById('bgFX');
+  if(!container) return;
+  // Avoid duplicates (hot reload, etc.)
+  if(container.dataset.enhanced) return; 
+  container.dataset.enhanced = 'true';
+
+  const ORB_COUNT = 9;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  for(let i=0;i<ORB_COUNT;i++){
+    const orb = document.createElement('div');
+    orb.className = 'orb';
+    const size = Math.round( (Math.random()*0.6 + 0.4) * 260 );
+    const xStart = Math.round(Math.random() * (vw - size));
+    const yStart = Math.round(Math.random() * (vh - size));
+    const xDrift = Math.round((Math.random()*2 -1) * 120);
+    const yDrift = Math.round((Math.random()*2 -1) * 140);
+    const dur = (Math.random()*14 + 18).toFixed(1) + 's';
+    const delay = (Math.random()*-20).toFixed(2) + 's';
+    const opacity = (Math.random()*0.35 + 0.25).toFixed(2);
+    orb.style.setProperty('--size', size+'px');
+    orb.style.setProperty('--xStart', xStart+'px');
+    orb.style.setProperty('--yStart', yStart+'px');
+    orb.style.setProperty('--xDrift', xDrift+'px');
+    orb.style.setProperty('--yDrift', yDrift+'px');
+    orb.style.setProperty('--dur', dur);
+    orb.style.setProperty('--delay', delay);
+    orb.style.setProperty('--o', opacity);
+    container.appendChild(orb);
+  }
+
+  // Recompute on resize (debounced)
+  let resizeTO;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTO);
+    resizeTO = setTimeout(() => {
+      // Remove existing orbs & regenerate (avoid layout thrash by fragment)
+      [...container.querySelectorAll('.orb')].forEach(o => o.remove());
+      container.dataset.enhanced = '';
+      initBackgroundOrbs();
+    }, 400);
+  });
+}
+
+/* ---------- Background Sprinting Streak Effect ---------- */
+function initBackgroundStreaks(){
+  const layer = document.getElementById('bgFX');
+  if(!layer) return;
+  let last = { x: null, y: null, t: 0 };
+  const maxStreaks = 40;
+  const minDist = 14; // minimum movement to spawn a streak
+  const minInterval = 28; // ms throttle
+
+  function spawn(x, y, dx, dy, speed){
+    // Avoid spawning over cards to keep tilt focus
+    const el = document.elementFromPoint(x, y);
+    if(el && el.closest('.card')) return;
+    const streak = document.createElement('div');
+    streak.className = 'streak';
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    // Speed normalization
+    const normSpeed = Math.min(Math.max(speed, 40), 1600); // clamp
+    const len = (normSpeed / 220).toFixed(2); // length scaling
+    const hueBase = 190 + (normSpeed / 1600) * 120; // shift hue with speed
+    const thickness = (Math.min(Math.max(speed,40), 900) / 900) * 0.9 + 0.5; // scale thickness subtly
+    streak.style.setProperty('--angle', angle.toFixed(2)+'deg');
+    streak.style.setProperty('--len', (len + 0.65).toString());
+    streak.style.setProperty('--thick', thickness.toFixed(2));
+    streak.style.setProperty('--h', hueBase.toFixed(1));
+    streak.style.left = x + 'px';
+    streak.style.top = y + 'px';
+    layer.appendChild(streak);
+    setTimeout(() => streak.remove(), 700);
+    const all = layer.querySelectorAll('.streak');
+    if(all.length > maxStreaks){
+      for(let i=0;i< all.length - maxStreaks; i++) all[i].remove();
+    }
+  }
+
+  window.addEventListener('pointermove', (e) => {
+    const now = performance.now();
+    if(last.x == null){ last = { x: e.clientX, y: e.clientY, t: now }; return; }
+    const dx = e.clientX - last.x;
+    const dy = e.clientY - last.y;
+    const dist = Math.hypot(dx, dy);
+    const dt = now - last.t || 1;
+    if(dist < minDist || dt < minInterval){ return; }
+    const speed = dist / dt * 1000; // px per second
+    spawn(e.clientX, e.clientY, dx, dy, speed);
+    last = { x: e.clientX, y: e.clientY, t: now };
+  }, { passive: true });
+}
+
+/* ---------- Enhanced Cursor FX (Follower + Sparks) ---------- */
+function initCursorFX(){
+  const layer = document.getElementById('bgFX');
+  if(!layer) return;
+  // Core follower element
+  let core = layer.querySelector('.cursor-core');
+  if(!core){
+    core = document.createElement('div');
+    core.className = 'cursor-core hidden';
+    layer.appendChild(core);
+  }
+  let lastX = window.innerWidth/2, lastY = window.innerHeight/2;
+  let targetX = lastX, targetY = lastY;
+  let rafId;
+  const ease = 0.15; // smoothing factor
+  const sparksMax = 60;
+  let lastSparkTime = 0;
+
+  function loop(){
+    const dx = targetX - lastX;
+    const dy = targetY - lastY;
+    lastX += dx * ease;
+    lastY += dy * ease;
+    core.style.transform = `translate(${lastX}px, ${lastY}px) translate(-50%, -50%)`;
+    rafId = requestAnimationFrame(loop);
+  }
+  loop();
+
+  function spawnSpark(speed){
+    const now = performance.now();
+    // frequency scales with speed
+    if(now - lastSparkTime < Math.max(18, 120 - speed*0.08)) return;
+    lastSparkTime = now;
+    const spark = document.createElement('div');
+    spark.className = 'spark';
+    const angle = Math.random() * Math.PI * 2;
+    const spread = (Math.random()*8 + 4);
+    const vx = Math.cos(angle) * spread;
+    const vy = Math.sin(angle) * spread;
+    spark.style.left = targetX + 'px';
+    spark.style.top = targetY + 'px';
+    spark.style.setProperty('--x', vx.toFixed(2)+'px');
+    spark.style.setProperty('--y', vy.toFixed(2)+'px');
+    spark.style.setProperty('--dur', (500 + Math.random()*450)+'ms');
+    layer.appendChild(spark);
+    setTimeout(() => spark.remove(), 900);
+    const all = layer.querySelectorAll('.spark');
+    if(all.length > sparksMax){
+      for(let i=0;i< all.length - sparksMax; i++) all[i].remove();
+    }
+  }
+
+  let lastMove = { x: null, y: null, t: 0 };
+  window.addEventListener('pointermove', (e) => {
+    targetX = e.clientX; targetY = e.clientY;
+    core.classList.remove('hidden');
+    const now = performance.now();
+    if(lastMove.x != null){
+      const dx = e.clientX - lastMove.x;
+      const dy = e.clientY - lastMove.y;
+      const dist = Math.hypot(dx, dy);
+      const dt = now - lastMove.t || 1;
+      const speed = dist / dt * 1000; // px/s
+      spawnSpark(speed);
+      // subtle scale with speed
+      const scale = Math.min(1.25, 0.85 + speed / 2600);
+      core.style.scale = scale.toFixed(3);
+      core.style.opacity = Math.min(1, 0.55 + speed/2500).toFixed(2);
+    }
+    lastMove = { x: e.clientX, y: e.clientY, t: now };
+  }, { passive:true });
+
+  window.addEventListener('pointerleave', () => {
+    core.classList.add('hidden');
+  });
+
+  // Prevent memory leaks if page transitions later
+  window.addEventListener('beforeunload', () => cancelAnimationFrame(rafId));
+}
 
 /* ---------- Storage ----------
 ----------------------------*/
@@ -269,18 +450,20 @@ function renderProducts(){
     productsGrid.classList.remove('loading');
     list.forEach((p, index) => {
       const card = document.createElement('article');
-      card.className = 'card';
+      card.className = 'card tilt';
       card.style.animationDelay = `${index * 0.1}s`;
       card.innerHTML = `
-        <img loading="lazy" src="${p.image}" alt="${escapeHtml(p.title)}" />
-        <h3>${escapeHtml(p.title)}</h3>
-        <div class="meta">
-          <div>${escapeHtml(p.category)}</div>
-          <div class="price">${p.price.toFixed(2)} QAR</div>
-        </div>
-        <p style="color:var(--muted);font-size:13px;margin:8px 0">${escapeHtml(p.description)}</p>
-        <div style="display:flex;gap:8px">
-          <button class="btn primary" data-action="add" data-id="${p.id}">Add to cart</button>
+        <div class="tilt-inner">
+          <img loading="lazy" src="${p.image}" alt="${escapeHtml(p.title)}" />
+          <h3>${escapeHtml(p.title)}</h3>
+          <div class="meta">
+            <div>${escapeHtml(p.category)}</div>
+            <div class="price">${p.price.toFixed(2)} QAR</div>
+          </div>
+          <p style="color:var(--muted);font-size:13px;margin:8px 0">${escapeHtml(p.description)}</p>
+          <div style="display:flex;gap:8px">
+            <button class="btn primary" data-action="add" data-id="${p.id}">Add to cart</button>
+          </div>
         </div>
       `;
       productsGrid.appendChild(card);
@@ -316,6 +499,9 @@ function renderProducts(){
         }
       });
     });
+
+    // initialize tilt on newly added cards
+    initTiltEffects(productsGrid.querySelectorAll('.card.tilt'));
   }, 200);
 }
 
@@ -484,4 +670,63 @@ function initScrollAnimations() {
   document.querySelectorAll('.card, .hero, .controls').forEach(el => {
     observer.observe(el);
   });
+}
+
+/* ---------- Parallax Tilt Effect ---------- */
+function initTiltEffects(nodes){
+  nodes.forEach(card => {
+    if(card.dataset.tilted) return; card.dataset.tilted = 'true';
+    const maxTilt = 12; // degrees
+    const perspective = 900;
+    let ticking = false;
+
+    function setTransform(x, y){
+      const rect = card.getBoundingClientRect();
+      const cx = rect.left + rect.width/2;
+      const cy = rect.top + rect.height/2;
+      const dx = x - cx;
+      const dy = y - cy;
+      const rx = (dy / (rect.height/2)) * -maxTilt;
+      const ry = (dx / (rect.width/2)) * maxTilt;
+      card.dataset.tilting = 'true';
+      card.style.transform = `perspective(${perspective}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateY(-4px)`;
+    }
+
+    function reset(){
+      card.dataset.tilting = 'false';
+      card.style.transform = '';
+    }
+
+    card.addEventListener('pointermove', (e) => {
+      if(!ticking){
+        window.requestAnimationFrame(() => { setTransform(e.clientX, e.clientY); ticking=false; });
+        ticking = true;
+      }
+    });
+    card.addEventListener('pointerleave', reset);
+    card.addEventListener('blur', reset);
+  });
+}
+
+/* ---------- Mode Toggle (Normal / Glass) ---------- */
+function initModeToggle(){
+  const btn = document.getElementById('modeToggle');
+  if(!btn) return;
+  btn.addEventListener('click', () => {
+    const enable = !document.body.classList.contains('glass-mode');
+    enableGlassMode(enable);
+  });
+}
+
+function enableGlassMode(enable){
+  const btn = document.getElementById('modeToggle');
+  if(enable){
+    document.body.classList.add('glass-mode');
+    btn && (btn.setAttribute('aria-pressed','true'), btn.textContent='Normal');
+    localStorage.setItem('kyboot_ui_mode','glass');
+  } else {
+    document.body.classList.remove('glass-mode');
+    btn && (btn.setAttribute('aria-pressed','false'), btn.textContent='Glass');
+    localStorage.setItem('kyboot_ui_mode','normal');
+  }
 }
