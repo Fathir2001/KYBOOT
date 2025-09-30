@@ -129,7 +129,17 @@ const cartCount = document.getElementById('cartCount');
 const cartPanel = document.getElementById('cartPanel');
 const cartItemsEl = document.getElementById('cartItems');
 const cartSubtotalEl = document.getElementById('cartSubtotal');
-const productModal = document.getElementById('productModal');
+// Removed product modal feature
+const productModal = null;
+let lastModalTrigger = null;
+
+// Utility helpers
+const $ = (id) => document.getElementById(id);
+function safeEl(id, warn = false) {
+  const el = $(id);
+  if (!el && warn) console.warn('[KYBOOT] Missing expected element #' + id);
+  return el;
+}
 
 /* ---------- Init ----------
 --------------------------*/
@@ -166,30 +176,25 @@ function loadCart() {
 /* ---------- UI: filters & controls ----------
 -------------------------------------------*/
 function attachControls() {
-  document.getElementById('searchInput').addEventListener('input', (e) => {
+  safeEl('searchInput')?.addEventListener('input', (e) => {
     state.filters.query = e.target.value.trim().toLowerCase();
     renderProducts();
   });
-
-  document.getElementById('categoryFilter').addEventListener('change', (e) => {
+  safeEl('categoryFilter')?.addEventListener('change', (e) => {
     state.filters.category = e.target.value;
     renderProducts();
   });
-
-  document.getElementById('sortSelect').addEventListener('change', (e) => {
+  safeEl('sortSelect')?.addEventListener('change', (e) => {
     state.filters.sort = e.target.value;
     renderProducts();
   });
-
-  document.getElementById('viewCatalogBtn').addEventListener('click', () => {
+  safeEl('viewCatalogBtn')?.addEventListener('click', () => {
     window.scrollTo({top: document.getElementById('productsGrid').offsetTop - 20, behavior:'smooth'});
   });
-
-  document.getElementById('cartBtn').addEventListener('click', () => {
+  safeEl('cartBtn')?.addEventListener('click', () => {
     toggleCartPanel(true);
   });
-
-  document.getElementById('closeCart').addEventListener('click', () => toggleCartPanel(false));
+  safeEl('closeCart')?.addEventListener('click', () => toggleCartPanel(false));
   
   // Close cart when clicking outside of it
   document.addEventListener('click', (e) => {
@@ -204,9 +209,7 @@ function attachControls() {
     }
   });
   
-  document.getElementById('closeModal').addEventListener('click', () => closeProductModal());
-  document.getElementById('addToCartModal').addEventListener('click', addFromModal);
-  document.getElementById('buyNow').addEventListener('click', buyNowFromModal);
+  // Modal removed: no related listeners
 
   document.getElementById('checkoutBtn').addEventListener('click', () => {
     if (state.cart.length === 0) {
@@ -277,7 +280,6 @@ function renderProducts(){
         </div>
         <p style="color:var(--muted);font-size:13px;margin:8px 0">${escapeHtml(p.description)}</p>
         <div style="display:flex;gap:8px">
-          <button class="btn" data-action="view" data-id="${p.id}">Quick view</button>
           <button class="btn primary" data-action="add" data-id="${p.id}">Add to cart</button>
         </div>
       `;
@@ -298,15 +300,16 @@ function renderProducts(){
           e.currentTarget.style.transform = '';
         }, 150);
         
-        if (action === 'view') openProductModal(id);
         if (action === 'add') {
           addToCart(id, 1);
           renderCart();
           // Enhanced cart button animation
           const cartEl = document.getElementById('cartBtn');
-          cartEl.style.animation = 'none';
-          cartEl.offsetHeight; // Trigger reflow
-          cartEl.style.animation = 'pulse 0.6s ease-in-out';
+          if (cartEl) {
+            cartEl.style.animation = 'none';
+            cartEl.offsetHeight; // Trigger reflow
+            cartEl.style.animation = 'pulse 0.6s ease-in-out';
+          }
           
           // Show success feedback
           showNotification('Added to cart!', 'success');
@@ -316,35 +319,7 @@ function renderProducts(){
   }, 200);
 }
 
-/* ---------- Product modal ----------
----------------------------------*/
-function openProductModal(productId){
-  const p = PRODUCTS.find(x => x.id === productId);
-  if (!p) return;
-  state.activeProduct = p;
-  productModal.setAttribute('aria-hidden','false');
-  document.getElementById('modalImage').src = p.image;
-  document.getElementById('modalTitle').textContent = p.title;
-  document.getElementById('modalDesc').textContent = p.description;
-  document.getElementById('modalPrice').textContent = `${p.price.toFixed(2)} QAR`;
-  document.getElementById('modalQty').value = 1;
-  document.getElementById('modalSize').value = '42';
-  productModal.focus();
-}
-function closeProductModal(){
-  productModal.setAttribute('aria-hidden','true');
-  state.activeProduct = null;
-}
-function addFromModal(){
-  const qty = Math.max(1, parseInt(document.getElementById('modalQty').value || '1', 10));
-  addToCart(state.activeProduct.id, qty);
-  renderCart();
-  closeProductModal();
-}
-function buyNowFromModal(){
-  addFromModal();
-  toggleCartPanel(true);
-}
+// Modal feature removed: stripped related functions
 
 /* ---------- Cart logic ----------
 --------------------------------*/
