@@ -108,6 +108,10 @@ const PRODUCTS = [
   
 ];
 
+/* ---------- Force Always Start At Top (disable scroll restoration) ---------- */
+try { if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; } } catch(_e){}
+let __initialLoad = true;
+
 /* ---------- App state ----------
 ---------------------------------*/
 let state = {
@@ -169,7 +173,11 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     document.body.style.transition = 'opacity 0.5s ease';
     document.body.style.opacity = '1';
+    if(__initialLoad){ window.scrollTo({top:0, left:0, behavior:'instant' in window ? 'instant' : 'auto'}); }
   }, 100);
+
+  // Safety: ensure after first render (product delay uses 200ms) we still are at top
+  setTimeout(() => { if(__initialLoad){ window.scrollTo(0,0); __initialLoad=false; } }, 450);
 });
 
 /* ---------- Ambient Background Orbs ---------- */

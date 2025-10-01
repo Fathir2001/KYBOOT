@@ -8,6 +8,12 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="glass-mode">
+  <script>
+    // Prevent browser from jumping to a remembered scroll or hash before our JS
+    if('scrollRestoration' in history){ try { history.scrollRestoration='manual'; } catch(e){} }
+    if(location.hash){ history.replaceState(null,'',location.pathname + location.search); }
+    window.scrollTo(0,0);
+  </script>
   <!-- Animated Background Layer -->
   <div id="bgFX" class="bg-fx" aria-hidden="true"></div>
   <header class="site-header">
