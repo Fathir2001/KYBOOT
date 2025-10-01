@@ -152,8 +152,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('year').textContent = new Date().getFullYear();
   initBackgroundOrbs();
   initModeToggle();
-  // apply persisted mode
-  if(localStorage.getItem('kyboot_ui_mode') === 'glass'){ enableGlassMode(true); }
+  // Apply persisted mode. Glass is now the default.
+  const storedMode = localStorage.getItem('kyboot_ui_mode');
+  if(storedMode === 'normal') {
+    // user previously opted out of glass
+    enableGlassMode(false);
+  } else {
+    // default or explicit glass
+    enableGlassMode(true);
+  }
   initBackgroundStreaks();
   initCursorFX();
   
@@ -826,6 +833,18 @@ function initModeToggle(){
   btn.addEventListener('keydown', (e) => {
     if(e.key === ' ' || e.key === 'Enter') { e.preventDefault(); btn.click(); }
   });
+  // sync initial ARIA state with current class
+  if(document.body.classList.contains('glass-mode')){
+    btn.setAttribute('aria-pressed','true');
+    btn.setAttribute('aria-checked','true');
+    btn.setAttribute('aria-label','Disable Glass Mode');
+    btn.classList.add('on');
+  } else {
+    btn.setAttribute('aria-pressed','false');
+    btn.setAttribute('aria-checked','false');
+    btn.setAttribute('aria-label','Enable Glass Mode');
+    btn.classList.remove('on');
+  }
 }
 
 function enableGlassMode(enable){
