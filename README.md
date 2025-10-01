@@ -131,6 +131,61 @@ No explicit license file is included. Add a `LICENSE` (e.g., MIT) if you plan to
 | Animations feel heavy | GPU / older device | Disable advanced FX as described above |
 | Glass mode unreadable | High contrast needs | Switch to normal mode toggle |
 
+## 🌐 Deployment (GitHub Pages)
+This project is a pure static site, so you can publish it directly either by (A) using GitHub Pages with a branch or (B) the included GitHub Actions workflow that deploys from a `Deploy` branch.
+
+### Option A: Simple Branch (manual setup)
+1. Create a branch named `Deploy` (or `gh-pages`) from `main`.
+2. Push it to GitHub.
+3. In the repository Settings > Pages, select that branch and `/ (root)`.
+4. Visit the generated URL (typically: `https://<username>.github.io/<repo>/`).
+
+PowerShell commands (adjust remote if not `origin`):
+```powershell
+git checkout -b Deploy
+git push origin Deploy
+```
+Then configure Pages in the web UI.
+
+### Option B: Automated (recommended) via GitHub Actions
+This repo now includes `.github/workflows/deploy-pages.yml` which:
+- Triggers on pushes to the `Deploy` branch (or manual dispatch)
+- Uploads the repository root as a Pages artifact (no build step)
+- Publishes to GitHub Pages via the official deploy action
+
+Steps:
+1. Ensure the workflow file is present on GitHub (`deploy-pages.yml`).
+2. Create & push the `Deploy` branch (first time):
+	```powershell
+	git checkout -b Deploy
+	git push origin Deploy
+	```
+3. (Optional) Make future site edits on `main`, then merge or cherry-pick into `Deploy` for publishing:
+	```powershell
+	git checkout Deploy
+	git merge main
+	git push origin Deploy
+	```
+4. First time only: After the workflow succeeds once, go to Settings > Pages and ensure "Source: GitHub Actions" is selected (it usually auto-detects).
+5. Your live site URL will appear in the workflow summary (environment URL) and under Settings > Pages.
+
+### Custom Domains & SPA Notes
+- Because this is multi-page static HTML (not a client-side router app), no 404 redirect handling is required.
+- To use a custom domain: Add a `CNAME` file at the root (or configure in Settings > Pages and GitHub will create it). Example content: `shop.example.com`.
+
+### Cache Busting
+Since files are served directly, if you modify `app.js` or `styles.css`, browsers might cache aggressively. You can:
+- Append a query string in HTML references (e.g., `app.js?v=2`).
+- Or rely on users' cache expiration (less reliable for rapid iteration).
+
+### Deployment Checklist
+- [ ] `Deploy` branch pushed
+- [ ] Workflow run successful (green check)
+- [ ] Pages enabled with Source: GitHub Actions
+- [ ] URL loads site assets (no 404s in console)
+
+If something fails, open the latest workflow run logs (Actions tab) for details.
+
 ## 🧭 Attribution
 Created & styled by project author(s). Product names / imagery are demonstrative and may belong to respective trademark holders.
 
