@@ -1647,6 +1647,104 @@
   /* Dialog sub-note (replaces inline style) */
   .ui-dialog .dialog-subnote { color: var(--muted); font-weight:500; display:inline-block; margin-top:4px; }
   body.glass-mode .ui-dialog .dialog-subnote { color: rgba(255,255,255,0.85); font-weight:600; text-shadow:0 1px 3px rgba(0,0,0,0.55); }
+
+  /* Terms Popover */
+  .popover-terms { position:absolute; z-index:5000; width:min(380px, calc(100vw - 32px)); background:var(--card); border:1px solid rgba(59,130,246,0.18); border-radius:20px; box-shadow:0 18px 48px -14px rgba(15,23,42,0.4), var(--shadow); animation: popIn .4s var(--transition-bounce) both; }
+  .popover-terms .pop-inner { display:flex; flex-direction:column; max-height:60vh; }
+  .popover-terms .pop-header { display:flex; align-items:center; justify-content:space-between; padding:18px 22px 10px; }
+  .popover-terms h3 { font-size:18px; margin:0; letter-spacing:-0.5px; }
+  .popover-terms .close-x { background:rgba(59,130,246,0.12); border:0; width:32px; height:32px; border-radius:12px; cursor:pointer; font-size:18px; font-weight:700; color:var(--accent); display:flex; align-items:center; justify-content:center; transition:background .25s; }
+  .popover-terms .close-x:hover { background:var(--accent-gradient); color:#fff; }
+  .popover-terms .pop-body { padding:0 22px 18px; overflow:auto; scrollbar-width:thin; }
+  .popover-terms .pop-body::-webkit-scrollbar { width:8px; }
+  .popover-terms .pop-body::-webkit-scrollbar-track { background:transparent; }
+  .popover-terms .pop-body::-webkit-scrollbar-thumb { background:linear-gradient(var(--accent), var(--accent-secondary)); border-radius:20px; opacity:.7; }
+  .popover-terms p { font-size:14px; line-height:1.5; margin:0 0 12px; color:var(--text-secondary); }
+  .popover-terms ul.mini-list { list-style:none; margin:0 0 14px; padding:0; display:grid; gap:6px; }
+  .popover-terms ul.mini-list li { background:var(--card-hover); padding:8px 10px; border-radius:10px; font-size:13px; line-height:1.4; box-shadow:0 2px 6px rgba(15,23,42,0.06); }
+  .popover-terms .fine-print { font-size:11px !important; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .popover-terms .fine-print .btn.small { padding:4px 10px; font-size:11px; }
+  .popover-terms.below::after, .popover-terms:not(.below)::after { content:""; position:absolute; width:14px; height:14px; background:var(--card); border:1px solid rgba(59,130,246,0.18); transform:rotate(45deg); }
+  .popover-terms:not(.below)::after { bottom:-7px; left:50%; margin-left:-7px; box-shadow:0 10px 20px -6px rgba(15,23,42,0.3); }
+  .popover-terms.below::after { top:-7px; left:50%; margin-left:-7px; box-shadow:0 -6px 18px -4px rgba(15,23,42,0.3); }
+  @keyframes popIn { 0% { opacity:0; transform:translateY(8px) scale(.96); } 100% { opacity:1; transform:translateY(0) scale(1); } }
+  body.glass-mode .popover-terms { backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%); background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.25); box-shadow:0 18px 60px -16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.1) inset; }
+  body.glass-mode .popover-terms ul.mini-list li { background:rgba(255,255,255,0.25); }
+  body.glass-mode .popover-terms::after { background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.3); }
+  /* Backdrop effect when popover open */
+  body.terms-popover-open .bg-fx { filter:blur(6px) brightness(.8) saturate(.9); transition:filter .4s ease; }
+  body.terms-popover-open main, body.terms-popover-open header, body.terms-popover-open footer { filter:blur(2px) opacity(.85); transition:filter .35s ease; }
+  /* Mirror effect for contact popover */
+  body.contact-popover-open .bg-fx { filter:blur(6px) brightness(.8) saturate(.9); transition:filter .4s ease; }
+  body.contact-popover-open main, body.contact-popover-open header, body.contact-popover-open footer { filter:blur(2px) opacity(.85); transition:filter .35s ease; }
+  .popover-terms { isolation:isolate; }
+  /* Strengthen readability in glass mode */
+  body.glass-mode .popover-terms { background:rgba(15,23,42,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); }
+  body.glass-mode .popover-terms h3 { color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.5); }
+  body.glass-mode .popover-terms p, body.glass-mode .popover-terms li { color:rgba(255,255,255,0.88); text-shadow:0 1px 3px rgba(0,0,0,.4); }
+
+  /* Contact Popover (shares many styles) */
+  .popover-contact { position:absolute; z-index:5000; width:min(400px, calc(100vw - 32px)); background:var(--card); border:1px solid rgba(59,130,246,0.18); border-radius:22px; box-shadow:0 18px 48px -14px rgba(15,23,42,0.4), var(--shadow); animation: popIn .4s var(--transition-bounce) both; isolation:isolate; }
+  .popover-contact .pop-inner { display:flex; flex-direction:column; max-height:62vh; }
+  .popover-contact .pop-header { display:flex; align-items:center; justify-content:space-between; padding:18px 22px 6px; }
+  .popover-contact h3 { font-size:19px; margin:0; letter-spacing:-0.5px; }
+  .popover-contact .close-x { background:rgba(59,130,246,0.12); border:0; width:32px; height:32px; border-radius:12px; cursor:pointer; font-size:18px; font-weight:700; color:var(--accent); display:flex; align-items:center; justify-content:center; transition:background .25s; }
+  .popover-contact .close-x:hover { background:var(--accent-gradient); color:#fff; }
+  .popover-contact form { padding:0 22px 20px; overflow:auto; }
+  .popover-contact form .field { display:flex; flex-direction:column; gap:6px; margin:0 0 14px; }
+  .popover-contact form label { font-size:12px; text-transform:uppercase; letter-spacing:.08em; font-weight:600; color:var(--muted); }
+  .popover-contact form input, .popover-contact form textarea { font:inherit; padding:10px 12px; border-radius:12px; border:1px solid rgba(59,130,246,0.25); background:var(--card-hover); outline:none; transition:border .25s, box-shadow .25s; resize:vertical; }
+  .popover-contact form input:focus, .popover-contact form textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(59,130,246,0.25); }
+  .popover-contact form input.invalid, .popover-contact form textarea.invalid { border-color:var(--error); box-shadow:0 0 0 3px rgba(239,68,68,.25); }
+  .popover-contact form .err { font-size:11px; color:var(--error); font-weight:600; margin-top:-4px; }
+  .popover-contact .helper-links { display:flex; flex-wrap:wrap; gap:10px; margin:4px 0 10px; }
+  .popover-contact .helper-links a { font-size:12px; color:var(--accent); text-decoration:none; background:var(--accent-soft); padding:6px 10px; border-radius:10px; transition:background .25s; }
+  .popover-contact .helper-links a:hover { background:var(--accent-gradient); color:#fff; }
+  .popover-contact .actions-row { display:flex; gap:10px; align-items:center; margin:4px 0 10px; }
+  .popover-contact .fine-print { font-size:11px; color:var(--muted); margin:4px 0 0; }
+  .popover-contact.below::after, .popover-contact:not(.below)::after { content:""; position:absolute; width:14px; height:14px; background:var(--card); border:1px solid rgba(59,130,246,0.18); transform:rotate(45deg); }
+  .popover-contact:not(.below)::after { bottom:-7px; left:50%; margin-left:-7px; box-shadow:0 10px 20px -6px rgba(15,23,42,0.3); }
+  .popover-contact.below::after { top:-7px; left:50%; margin-left:-7px; box-shadow:0 -6px 18px -4px rgba(15,23,42,0.3); }
+  body.glass-mode .popover-contact { background:rgba(15,23,42,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid rgba(255,255,255,0.25); box-shadow:0 18px 60px -16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.1) inset; }
+  body.glass-mode .popover-contact::after { background:rgba(15,23,42,0.55); border:1px solid rgba(255,255,255,0.25); }
+  body.glass-mode .popover-contact h3 { color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.5); }
+  body.glass-mode .popover-contact label { color:rgba(255,255,255,0.65); }
+  body.glass-mode .popover-contact input, body.glass-mode .popover-contact textarea { background:rgba(255,255,255,0.2); color:#fff; }
+  body.glass-mode .popover-contact .fine-print { color:rgba(255,255,255,0.65); }
+  body.glass-mode .popover-contact .helper-links a { background:rgba(255,255,255,0.2); }
+
+/* ===== Accessibility & Readability Enhancements (Popover Contrast) ===== */
+/* Stronger glass surface & higher contrast text */
+body.glass-mode .popover-terms,
+body.glass-mode .popover-contact {
+  background: linear-gradient(135deg, rgba(15,23,42,0.82), rgba(30,41,59,0.78)) border-box;
+  backdrop-filter: blur(20px) saturate(220%);
+  -webkit-backdrop-filter: blur(20px) saturate(220%);
+  border: 1px solid rgba(255,255,255,0.28);
+}
+body.glass-mode .popover-terms h3,
+body.glass-mode .popover-contact h3 { color:#fff; text-shadow:0 2px 8px rgba(0,0,0,0.6); }
+body.glass-mode .popover-terms p,
+body.glass-mode .popover-terms li,
+body.glass-mode .popover-contact p,
+body.glass-mode .popover-contact label,
+body.glass-mode .popover-contact .fine-print { color:rgba(255,255,255,0.92); }
+body.glass-mode .popover-terms ul.mini-list li { background:rgba(255,255,255,0.18); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
+body.glass-mode .popover-contact input,
+body.glass-mode .popover-contact textarea { background:rgba(255,255,255,0.24); border:1px solid rgba(255,255,255,0.38); color:#fff; }
+body.glass-mode .popover-contact input:focus,
+body.glass-mode .popover-contact textarea:focus { border-color:var(--accent); box-shadow:0 0 0 2px rgba(59,130,246,0.45); }
+body.glass-mode .popover-contact input::placeholder,
+body.glass-mode .popover-contact textarea::placeholder { color:rgba(255,255,255,0.55); }
+body.glass-mode .popover-contact .err { color:#ffb4b4; text-shadow:0 1px 3px rgba(0,0,0,.4); }
+/* Improve arrow diamond visibility */
+body.glass-mode .popover-terms::after,
+body.glass-mode .popover-contact::after { background:linear-gradient(135deg, rgba(15,23,42,0.85), rgba(37,51,73,0.8)); border:1px solid rgba(255,255,255,0.3); }
+
+/* Normal mode slight tweak for clearer content */
+.popover-terms, .popover-contact { backdrop-filter: blur(12px) saturate(150%); -webkit-backdrop-filter: blur(12px) saturate(150%); }
+.popover-contact input, .popover-contact textarea { background:rgba(255,255,255,0.9); }
+.popover-contact input::placeholder, .popover-contact textarea::placeholder { color: #64748b; }
   /* Cancel button contrast inside dialog for glass mode */
   body.glass-mode .ui-dialog .actions .btn:not(.primary) { background: rgba(255,255,255,0.92); color:#0f172a; border:2px solid rgba(59,130,246,0.28); box-shadow:0 2px 6px -2px rgba(0,0,0,0.4); }
   body.glass-mode .ui-dialog .actions .btn:not(.primary):hover { background:#fff; border-color: var(--accent); }
