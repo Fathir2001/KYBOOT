@@ -444,6 +444,24 @@ function attachControls() {
       onConfirm: () => { state.cart = []; saveCart(); renderCart(); showToast('Cart cleared','success'); }
     });
   });
+
+  // Terms popup
+  const termsLink = document.getElementById('terms');
+  if(termsLink){
+    termsLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      const year = new Date().getFullYear();
+        showTermsPopover(e.currentTarget);
+    });
+  }
+    // Contact popup
+    const contactLink = document.getElementById('contact');
+    if(contactLink){
+      contactLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showContactPopover(e.currentTarget);
+      });
+    }
 }
 
 /* ---------- Rendering products ----------
@@ -868,4 +886,243 @@ function enableGlassMode(enable){
     }
     localStorage.setItem('kyboot_ui_mode','normal');
   }
+}
+
+/* ---------- Inline Popover for Terms (anchored near footer link) ---------- */
+function showTermsPopover(anchor){
+  if(!anchor) return;
+  // Remove any existing popover
+  document.querySelectorAll('.popover-terms, .popover-contact').forEach(p => p.remove());
+  document.body.classList.add('terms-popover-open');
+  const year = new Date().getFullYear();
+  const pop = document.createElement('div');
+  pop.className = 'popover-terms';
+  pop.setAttribute('role','dialog');
+  pop.setAttribute('aria-label','Terms & Conditions');
+  pop.innerHTML = `
+    <div class="pop-inner">
+      <div class="pop-header">
+        <h3>Terms & Conditions</h3>
+        <button type="button" class="close-x" aria-label="Close">×</button>
+      </div>
+      <div class="pop-body">
+        <p><strong>Welcome!</strong> This summary highlights key points. For clarifications email <a href="mailto:legal@kyboot.example">legal@kyboot.example</a>.</p>
+        <ul class="mini-list">
+          <li><strong>Products:</strong> Availability can change; refunds if unavailable.</li>
+          <li><strong>Pricing:</strong> QAR currency; obvious errors may void an order.</li>
+          <li><strong>Orders:</strong> We may decline suspicious or restricted orders.</li>
+          <li><strong>Shipping:</strong> Estimates only; carriers may delay.</li>
+          <li><strong>Returns:</strong> 14‑day window for unworn items (some exclusions).</li>
+          <li><strong>Warranty:</strong> Manufacturing defects only; normal wear excluded.</li>
+          <li><strong>Privacy:</strong> Data handled per policy; no absolute guarantee.</li>
+          <li><strong>Liability:</strong> No indirect or consequential damages.</li>
+        </ul>
+        <p class="fine-print">Version ${year}. Continued use means acceptance. <button class="btn small view-full" type="button">View full details</button></p>
+      </div>
+    </div>`;
+  document.body.appendChild(pop);
+
+  // Positioning
+  const rect = anchor.getBoundingClientRect();
+  const margin = 8;
+  const preferredTop = rect.top + window.scrollY - pop.offsetHeight - margin;
+  // Build first hidden to measure then adjust
+  pop.style.position = 'absolute';
+  pop.style.opacity = '0';
+  pop.style.pointerEvents = 'none';
+  requestAnimationFrame(() => {
+    let top = preferredTop;
+    if(top < window.scrollY + 10){ // if above viewport, place below link
+      top = rect.bottom + window.scrollY + margin;
+      pop.classList.add('below');
+    }
+    let left = rect.left + window.scrollX - (pop.offsetWidth/2) + rect.width/2;
+    const maxLeft = window.scrollX + document.documentElement.clientWidth - pop.offsetWidth - 10;
+    if(left < 10) left = 10;
+    if(left > maxLeft) left = maxLeft;
+    pop.style.top = top + 'px';
+    pop.style.left = left + 'px';
+    pop.style.opacity = '1';
+    pop.style.pointerEvents = 'auto';
+  });
+
+  // Close logic
+  function remove(){
+    pop.remove();
+    document.removeEventListener('mousedown', outside);
+    document.removeEventListener('keydown', esc);
+    // Only remove backdrop class if no other popover is open
+    if(!document.querySelector('.popover-contact')){
+      document.body.classList.remove('terms-popover-open');
+    }
+  }
+  function outside(ev){ if(!pop.contains(ev.target) && ev.target !== anchor){ remove(); }
+  }
+  function esc(ev){ if(ev.key === 'Escape'){ remove(); anchor.focus(); } }
+  document.addEventListener('mousedown', outside);
+  document.addEventListener('keydown', esc);
+  pop.querySelector('.close-x').addEventListener('click', remove);
+
+  // Trap focus minimal (cycle between close and view-full button)
+  const focusables = pop.querySelectorAll('button, a');
+  if(focusables.length){ focusables[0].focus(); }
+  pop.addEventListener('keydown', (e) => {
+    if(e.key === 'Tab'){
+      const list = Array.from(focusables);
+      const idx = list.indexOf(document.activeElement);
+      if(e.shiftKey && idx === 0){ e.preventDefault(); list[list.length-1].focus(); }
+      else if(!e.shiftKey && idx === list.length-1){ e.preventDefault(); list[0].focus(); }
+    }
+  });
+
+  // View full opens original dialog for full content
+  pop.querySelector('.view-full').addEventListener('click', () => {
+    remove();
+    const year2 = new Date().getFullYear();
+    showDialog({
+      title: 'Terms & Conditions',
+      message: `
+        <div class="legal-block" style="max-height:52vh;overflow:auto;padding-right:6px;">
+          <p><strong>Welcome to Kyboot Shop.</strong> By accessing or purchasing from this site you agree to the following terms. Please read them carefully. This summary is provided for convenience and does not replace the full legal agreement.</p>
+          <h4 style="margin:18px 0 6px;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent)">1. Products & Availability</h4>
+          <p>We strive to display accurate product information. Inventory may change without notice. In the rare case an ordered item becomes unavailable, we will offer an alternative or full refund.</p>
+          <h4 style="margin:18px 0 6px;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent)">2. Pricing & Currency</h4>
+          <p>All prices are listed in QAR and include applicable VAT unless stated otherwise. We may adjust pricing due to promotions, supplier changes or errors. Confirmed orders will not be retroactively adjusted except in case of obvious pricing mistakes.</p>
+          <h4 style="margin:18px 0 6px;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent)">3. Orders & Payment</h4>
+          <p>Placing an order constitutes an offer to purchase. We reserve the right to refuse or cancel any order (e.g. suspected fraud, payment issue, shipping restriction). You agree to provide current, complete and accurate purchase information.</p>
+          <h4 style="margin:18px 0 6px;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent)">4. Shipping & Delivery</h4>
+          <p>Estimated delivery times are provided for convenience and are not guaranteed. Delays caused by carriers or customs are outside our control, but we will assist where possible.</p>
+          <h4 style="margin:18px 0 6px;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent)">5. Returns & Exchanges</h4>
+          <p>Unworn items in original condition may typically be returned within 14 days of delivery unless marked Final Sale. Custom or hygienic-restricted items may not be returnable. Contact support before returning any item to receive an RMA.</p>
+          <h4 style="margin:18px 0 6px;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent)">6. Warranty</h4>
+          <p>Manufacturing defects are covered under a limited warranty. Wear-and-tear, misuse, or accidental damage are excluded. We may repair, replace or refund at our discretion.</p>
+          <h4 style="margin:18px 0 6px;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent)">7. Privacy & Data</h4>
+          <p>Your personal data is processed in accordance with our Privacy Policy (available on request). We use standard security practices but cannot guarantee absolute protection of transmitted data.</p>
+          <h4 style="margin:18px 0 6px;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent)">8. Limitation of Liability</h4>
+          <p>To the fullest extent permitted by law, Kyboot Shop is not liable for indirect, incidental or consequential damages arising from use of the site or products.</p>
+          <h4 style="margin:18px 0 6px;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent)">9. Changes</h4>
+          <p>We may update these terms at any time. Continued use of the site after updates constitutes acceptance of the revised version.</p>
+          <p style="margin-top:20px;font-size:12px;color:var(--muted)">Version: ${year2}. For clarifications contact <a href="mailto:legal@kyboot.example" style="color:var(--accent);text-decoration:none;">legal@kyboot.example</a>.</p>
+        </div>
+        <small class="dialog-subnote">This summary does not limit any statutory rights you may have.</small>
+      `,
+      confirmText: 'Close',
+      cancelText: null,
+      onConfirm: () => {}
+    });
+  });
+}
+
+/* ---------- Contact Popover (mini form) ---------- */
+function showContactPopover(anchor){
+  if(!anchor) return;
+  document.querySelectorAll('.popover-terms, .popover-contact').forEach(p => p.remove());
+  document.body.classList.add('contact-popover-open');
+  const pop = document.createElement('div');
+  pop.className = 'popover-contact';
+  pop.setAttribute('role','dialog');
+  pop.setAttribute('aria-label','Contact Support');
+  pop.innerHTML = `
+    <div class="pop-inner">
+      <div class="pop-header">
+        <h3>Contact Us</h3>
+        <button type="button" class="close-x" aria-label="Close">×</button>
+      </div>
+      <form class="contact-form" novalidate>
+        <div class="field">
+          <label for="cf_name">Name</label>
+          <input id="cf_name" name="name" type="text" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="cf_email">Email</label>
+          <input id="cf_email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+        </div>
+        <div class="field">
+          <label for="cf_msg">Message</label>
+          <textarea id="cf_msg" name="message" rows="3" required placeholder="How can we help?"></textarea>
+        </div>
+        <div class="helper-links">
+          <a href="mailto:support@kyboot.example" class="quick-mail">Email support directly</a>
+          <a href="tel:+974000000" class="quick-call">Call: +974 0000 000</a>
+        </div>
+        <div class="actions-row">
+          <button type="submit" class="btn primary small">Send</button>
+          <button type="button" class="btn small cancel-btn">Cancel</button>
+        </div>
+        <p class="fine-print">We aim to reply within 24h. Your info is handled per our privacy policy.</p>
+      </form>
+    </div>`;
+  document.body.appendChild(pop);
+
+  // Position similar to terms
+  const rect = anchor.getBoundingClientRect();
+  const margin = 8;
+  pop.style.position = 'absolute';
+  pop.style.opacity = '0';
+  pop.style.pointerEvents = 'none';
+  requestAnimationFrame(() => {
+    let top = rect.top + window.scrollY - pop.offsetHeight - margin;
+    if(top < window.scrollY + 10){ top = rect.bottom + window.scrollY + margin; pop.classList.add('below'); }
+    let left = rect.left + window.scrollX - (pop.offsetWidth/2) + rect.width/2;
+    const maxLeft = window.scrollX + document.documentElement.clientWidth - pop.offsetWidth - 10;
+    if(left < 10) left = 10; if(left > maxLeft) left = maxLeft;
+    pop.style.top = top + 'px';
+    pop.style.left = left + 'px';
+    pop.style.opacity = '1';
+    pop.style.pointerEvents = 'auto';
+  });
+
+  const form = pop.querySelector('form.contact-form');
+  const nameEl = form.querySelector('#cf_name');
+  const emailEl = form.querySelector('#cf_email');
+  const msgEl = form.querySelector('#cf_msg');
+
+  function validateEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); }
+  function setError(el, msg){
+    let err = el.parentElement.querySelector('.err');
+    if(!err){ err = document.createElement('div'); err.className='err'; el.parentElement.appendChild(err); }
+    err.textContent = msg; el.classList.add('invalid');
+  }
+  function clearError(el){ el.classList.remove('invalid'); const err = el.parentElement.querySelector('.err'); if(err) err.textContent=''; }
+
+  form.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    let ok = true;
+    [nameEl,emailEl,msgEl].forEach(clearError);
+    if(!nameEl.value.trim()){ setError(nameEl,'Name required'); ok=false; }
+    if(!validateEmail(emailEl.value)){ setError(emailEl,'Valid email required'); ok=false; }
+    if(msgEl.value.trim().length < 5){ setError(msgEl,'Message too short'); ok=false; }
+    if(!ok) return;
+    // Simulate send
+    showToast('Message sent!','success',3000);
+    remove();
+  });
+  form.querySelector('.cancel-btn').addEventListener('click', () => remove());
+
+  // Close & outside
+  function remove(){
+    pop.remove();
+    document.removeEventListener('mousedown', outside);
+    document.removeEventListener('keydown', esc);
+    if(!document.querySelector('.popover-terms')){
+      document.body.classList.remove('contact-popover-open');
+    }
+  }
+  function outside(ev){ if(!pop.contains(ev.target) && ev.target !== anchor){ remove(); } }
+  function esc(ev){ if(ev.key === 'Escape'){ remove(); anchor.focus(); } }
+  document.addEventListener('mousedown', outside);
+  document.addEventListener('keydown', esc);
+  pop.querySelector('.close-x').addEventListener('click', remove);
+
+  // Focus management
+  const focusables = pop.querySelectorAll('button, input, textarea, a');
+  if(focusables.length){ focusables[0].focus(); }
+  pop.addEventListener('keydown', (e) => {
+    if(e.key === 'Tab'){
+      const list = Array.from(focusables);
+      const idx = list.indexOf(document.activeElement);
+      if(e.shiftKey && idx === 0){ e.preventDefault(); list[list.length-1].focus(); }
+      else if(!e.shiftKey && idx === list.length-1){ e.preventDefault(); list[0].focus(); }
+    }
+  });
 }
